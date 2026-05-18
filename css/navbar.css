@@ -1,0 +1,150 @@
+/* 1. Navbar Container - Tông Trắng Nâu thanh lịch */
+.navbar {
+    display: flex;
+    justify-content: center;
+    padding: 12px 0;
+    background: rgba(255, 255, 255, 0.95); /* Trắng trong suốt nhẹ */
+    backdrop-filter: blur(10px);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #efebe9; /* Viền nâu cực nhạt */
+    box-shadow: 0 2px 15px rgba(141, 110, 99, 0.05);
+    transition: all 0.3s ease;
+}
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    max-width: 1200px;
+}
+
+/* 2. Menu Links - Màu Nâu Đậm */
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 35px;
+}
+
+.nav-links li a {
+    text-decoration: none;
+    color: #5d4037; /* Nâu trầm */
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    position: relative;
+    transition: 0.3s;
+}
+
+/* Hiệu ứng gạch chân màu Nâu */
+.nav-links li a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1.5px;
+    bottom: -5px;
+    left: 0;
+    background-color: #8d6e63; /* Nâu sáng */
+    transition: 0.3s;
+}
+
+.nav-links li a:hover {
+    color: #8d6e63;
+}
+
+.nav-links li a:hover::after {
+    width: 100%;
+}
+
+/* 3. User Dropdown - Nền kem nhạt */
+.user-dropdown {
+    position: relative;
+    cursor: pointer;
+    background: #fdfaf9; /* Màu kem */
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid #efebe9;
+    transition: 0.3s;
+}
+
+.user-dropdown:hover {
+    background: #f5f0ee;
+    border-color: #d7ccc8;
+}
+
+.welcome-text { 
+    font-size: 9px; 
+    color: #a1887f; 
+    text-transform: uppercase; 
+    letter-spacing: 1.2px;
+}
+
+.user-name-display { 
+    color: #4e342e; 
+    font-weight: 700; 
+    font-size: 14px; 
+}
+
+/* 4. Dropdown Menu - Luxury Slide */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    background: white;
+    min-width: 200px;
+    box-shadow: 0 10px 30px rgba(78, 52, 46, 0.12);
+    border-radius: 8px;
+    border: 1px solid #efebe9;
+    padding: 8px 0;
+    list-style: none;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 1100;
+}
+
+.user-dropdown:hover .dropdown-menu {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-menu li a {
+    padding: 10px 20px;
+    color: #5d4037;
+    font-size: 14px;
+    display: block;
+    transition: 0.2s;
+}
+
+.dropdown-menu li a:hover { 
+    background: #fdfaf9; 
+    color: #8d6e63; 
+    padding-left: 25px;
+}
+
+/* 5. Nút Giỏ hàng / Mua ngay - Màu Nâu đồng bộ */
+.btn-main {
+    background: #8d6e63; /* Màu Nâu chủ đạo */
+    color: white !important;
+    padding: 10px 22px;
+    border-radius: 4px; /* Bo nhẹ cho sang */
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 12px rgba(141, 110, 99, 0.2);
+    transition: 0.3s;
+    border: none;
+}
+
+.btn-main:hover {
+    background: #5d4037; /* Nâu đậm hơn khi hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(93, 64, 55, 0.3);
+}

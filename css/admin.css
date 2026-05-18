@@ -1,0 +1,394 @@
+/* =============================================
+   ADMIN DASHBOARD - TOTAL RECOVERY (ULTIMATE COMBINED)
+   Theme: Earth Tone & Modern Glassmorphism
+============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+:root {
+    /* Palette chính */
+    --admin-bg: #fdfaf9;         /* Nền kem cực nhạt */
+    --sidebar-color: #4e342e;    /* Nâu đậm hạt dẻ */
+    --primary: #8d6e63;          /* Nâu đất chủ đạo */
+    --primary-dark: #3e2723;     /* Nâu gỗ đậm */
+    --accent: #e67e22;           /* Cam điểm nhấn (từ bản mới) */
+    --text-main: #3e2723;
+    --text-muted: #718096;
+    --glass: rgba(255, 255, 255, 0.95);
+    --shadow: 0 8px 30px rgba(78, 52, 46, 0.08);
+    --border-color: #efebe9;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 1. RESET & LAYOUT */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex; 
+    min-height: 100vh;
+    background-color: var(--admin-bg);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    color: var(--text-main);
+}
+
+/* 2. SIDEBAR - CỐ ĐỊNH BÊN TRÁI */
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    position: fixed;
+    top: 0; left: 0;
+    background: linear-gradient(180deg, var(--sidebar-color) 0%, var(--primary-dark) 100%);
+    z-index: 1000;
+    transition: var(--transition);
+    box-shadow: 4px 0 25px rgba(0,0,0,0.1);
+}
+
+.sidebar .logo { 
+    padding: 30px 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar .logo h2 {
+    font-family: 'Playfair Display', serif;
+    color: #fff;
+    letter-spacing: 3px;
+    font-size: 1.5rem;
+}
+
+.sidebar .menu {
+    list-style: none;
+    padding-top: 20px;
+}
+
+.sidebar .menu li { 
+    margin: 8px 18px;
+    padding: 12px 20px;
+    font-weight: 500;
+    color: #d7ccc8;
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.sidebar .menu li i { margin-right: 15px; width: 20px; text-align: center; font-size: 1.1rem; }
+
+.sidebar .menu li:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding-left: 25px;
+}
+
+.sidebar .menu li.active {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    color: white;
+    box-shadow: 0 8px 20px rgba(141, 110, 99, 0.3);
+}
+
+/* 3. MAIN CONTENT AREA */
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+    transition: var(--transition);
+    background: #fdfaf9;
+}
+
+.topbar {
+    height: 70px;
+    background: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+/* 4. TAB CONTENT & ANIMATION */
+.tab-content { 
+    display: none; 
+    padding: 40px;
+    animation: fadeIn 0.4s ease-out;
+}
+.tab-content.active { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 5. STAT CARDS */
+.stat-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
+    gap: 25px; 
+}
+
+.stat-card { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 15px; 
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 6px; height: 100%;
+    background: var(--primary);
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(141, 110, 99, 0.12);
+}
+
+.stat-number { 
+    font-size: 32px; 
+    font-weight: 700; 
+    color: var(--text-main);
+    font-family: 'Playfair Display', serif;
+    margin-top: 10px;
+}
+
+/* 6. MODERN TABLE */
+.table-container {
+    background: white;
+    margin-top: 35px;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    color: var(--primary);
+    padding: 18px 15px;
+    background: #fdfaf9;
+    text-align: left;
+    border-bottom: 2px solid #edf2f7;
+}
+
+table td {
+    padding: 18px 15px;
+    font-size: 0.95rem;
+    color: #5d4037;
+    border-bottom: 1px solid #f5f0ee;
+    vertical-align: middle;
+}
+
+table tr:hover { background-color: #fcf9f8; }
+
+/* Status Select trong bảng */
+.status-select { 
+    padding: 8px 12px; 
+    border-radius: 8px; 
+    border: 1.5px solid #edf2f7; 
+    background-color: #fff; 
+    cursor: pointer; 
+    font-weight: 600; 
+    color: #4a5568;
+    transition: 0.2s;
+    outline: none;
+}
+.status-select:hover { border-color: var(--accent); }
+
+/* 7. MODAL GLASSMORPHISM */
+.modal {
+    display: none !important; 
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(62, 39, 35, 0.5); 
+    backdrop-filter: blur(6px);
+}
+
+.modal[style*="display: block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 40px;
+    border-top: 8px solid var(--primary);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 90%; 
+    max-width: 600px;
+    animation: modalSlide 0.3s ease-out;
+}
+
+@keyframes modalSlide {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* 8. FORM ELEMENTS */
+.form-group { margin-bottom: 22px; }
+.form-group label { 
+    display: block; 
+    margin-bottom: 8px; 
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid #efebe9;
+    border-radius: 10px;
+    background: #fdfaf9;
+    font-size: 15px;
+    transition: 0.2s;
+}
+
+.form-group input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(141, 110, 99, 0.1);
+    outline: none;
+}
+
+/* 9. BUTTONS & BADGES */
+.btn-group { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
+
+.btn-main { 
+    background: var(--primary); 
+    color: #fff; 
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-main:hover { background: var(--sidebar-color); transform: translateY(-2px); }
+
+.badge { 
+    padding: 6px 14px; 
+    border-radius: 8px; 
+    font-size: 11px; 
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.badge-admin { background: #fee2e2; color: #dc2626; }
+.badge-user { background: #e0f2fe; color: #0284c7; }
+
+/* 10. RESPONSIVE */
+@media screen and (max-width: 992px) {
+    .sidebar { width: 80px; }
+    .main-content { margin-left: 80px; width: calc(100% - 80px); }
+    .sidebar .logo h2, .sidebar .menu li span { display: none; }
+    .sidebar .menu li { justify-content: center; padding: 15px; }
+    .sidebar .menu li i { margin-right: 0; }
+}
+
+@media screen and (max-width: 768px) {
+    .sidebar { left: -260px; }
+    .main-content { margin-left: 0; width: 100%; }
+    .sidebar.active { left: 0; width: 260px; }
+    .sidebar.active .logo h2, .sidebar.active .menu li span { display: block; }
+}
+
+/* CUSTOM SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #d7ccc8; border-radius: 10px; }
+/* Container chứa logo */
+.logo {
+    display: flex;
+    justify-content: center; /* Căn giữa ngang */
+    align-items: center;     /* Căn giữa dọc */
+    text-decoration: none;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+
+/* Hiệu ứng khi di chuột qua logo */
+.logo:hover {
+    transform: scale(1.05); /* Phóng to nhẹ 5% tạo cảm giác tương tác */
+    opacity: 0.9;
+}
+
+/* Định dạng hình ảnh logo */
+.logo img {
+    height: 100px;           /* Giữ chiều cao cố định */
+    width: 100px;            /* Giữ chiều rộng cố định */
+    object-fit: contain;     /* Quan trọng: Giữ nguyên tỉ lệ ảnh, không bị móp méo */
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.1)); /* Đổ bóng nhẹ cho logo nổi bật */
+}
+@media screen and (max-width: 768px) {
+    .logo img {
+        height: 60px; /* Thu nhỏ logo lại trên điện thoại */
+        width: 60px;
+    }
+}
+
+/* Riêng cho nút Đăng xuất */
+.logout-link {
+    color: #ff4d4d !important; /* Màu đỏ nổi bật */
+    margin-top: 20px; /* Tạo khoảng cách với các mục trên */
+    border: 1px solid transparent;
+}
+
+.logout-link i {
+    margin-right: 15px; /* Khoảng cách giữa icon và chữ */
+    font-size: 1.1rem;
+    width: 25px; /* Cố định chiều rộng icon để chữ thẳng hàng */
+    text-align: center;
+}
+
+/* Hiệu ứng khi di chuột vào nút Đăng xuất */
+.logout-link:hover {
+    background-color: rgba(255, 77, 77, 0.1); /* Nền đỏ rất nhạt */
+    border-color: #ff4d4d;
+    transform: translateX(5px); /* Nhích nhẹ sang phải */
+}
+/* Nếu bạn có đường kẻ ngang <hr> phía trên mục đăng xuất */
+.dropdown-menu hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 5px 0;
+}
+.preview-item {
+    position: relative; width: 80px; height: 80px;
+    border: 1px solid #ddd; border-radius: 8px; overflow: visible;
+}
+.preview-item img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 8px;
+}
+.btn-remove-img {
+    position: absolute; top: -8px; right: -8px;
+    background: #ff4757; color: white; border: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    cursor: pointer; font-size: 14px; font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex;
+    align-items: center; justify-content: center;
+}

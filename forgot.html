@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quên mật khẩu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+    <div class="container" id="container" style="min-height: 400px;">>
+        <div class="form-container sign in" style="width:100%; z-index: 1;">
+            <form action="php/send_reset.php" method="POST">
+                <h1>Quên mật khẩu</h1>
+                <span>Nhập lại email của bạn để đặt lại mật khẩu</span>
+                <input type="email" name="email" placeholder="Nhập email của bạn" required>
+                <button type="submit" name="request_reset">Gửi yêu cầu đặt lại mật khẩu</button>
+                <a href="login.html" style="margin-top: 15px;">Quay lại đăng nhập</a>
+            </form>
+        </div>
+        <div class="toggle-container" style="display:none;"></div>
+    </div>
+</body>
+</html>

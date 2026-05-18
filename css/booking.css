@@ -1,0 +1,156 @@
+/* --- TRANG SHOP / BOOKING (PHONG CÁCH NÂU - TRẮNG) --- */
+.booking-page {
+    display: flex;
+    margin-top: 100px; 
+    padding: 20px 5%;
+    gap: 30px;
+    background-color: #fdfaf9; /* Nền kem cực nhạt tương tự profile */
+}
+
+/* Sidebar bộ lọc - Thanh lịch & Tối giản */
+.filter-sidebar {
+    flex: 1;
+    max-width: 300px;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #efebe9;
+    box-shadow: 0 5px 20px rgba(141, 110, 99, 0.05);
+    height: fit-content;
+    position: sticky;
+    top: 120px;
+}
+
+.filter-sidebar h3 { 
+    margin-bottom: 25px; 
+    color: #5d4037; 
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    border-bottom: 2px solid #8d6e63;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+/* Thanh trượt giá màu Nâu - Đồng bộ với primary color */
+.filter-group input[type="range"] {
+    width: 100%;
+    accent-color: #8d6e63;
+}
+
+/* --- SỬA LỖI TOAST THÔNG BÁO (CHUYỂN SANG FIXED) --- */
+.cart-toast {
+    position: fixed; /* Thay vì absolute để không bị khuất */
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #5d4037; 
+    color: white;
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeInDown 0.4s ease forwards;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Grid sản phẩm */
+.grid {
+    display: grid;
+    /* Tự động tính toán số cột dựa trên chiều rộng màn hình, mỗi cột tối thiểu 280px */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+    gap: 30px; /* Khoảng cách giữa các thẻ */
+    width: 100%;
+    padding: 10px 0;
+}
+
+/* Đảm bảo vùng chứa nội dung chính chiếm hết phần còn lại bên phải sidebar */
+.booking-content {
+    flex: 3; /* Chiếm tỉ lệ lớn hơn so với sidebar */
+    width: 100%;
+}
+
+.product-card {
+    position: relative;
+    background: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: 0.3s;
+    border: 1px solid #f5f0ee;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(141, 110, 99, 0.1);
+}
+
+/* Nút tim wishlist */
+.wishlist-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 5;
+    transition: 0.3s;
+}
+
+.wishlist-btn i { color: #ccc; }
+.wishlist-btn.active i { color: #e74c3c; }
+/* 1. Giới hạn tên sản phẩm tối đa 2 dòng */
+.info h3 {
+    font-size: 1.1rem;
+    color: #5d4037;
+    margin-bottom: 8px;
+    height: 2.4em; /* Chiều cao cố định cho 2 dòng */
+    line-height: 1.2em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Số dòng muốn hiển thị */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 2. Cố định phần thông tin kho */
+.info p {
+    font-size: 0.9rem;
+    color: #8d6e63;
+    margin-bottom: 15px;
+}
+
+/* 3. Đảm bảo phần footer luôn nằm sát đáy và thẳng hàng */
+.product-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Đảm bảo các card cao bằng nhau trong grid */
+}
+
+.card-footer {
+    margin-top: auto; /* Đẩy toàn bộ cụm giá & nút xuống dưới cùng */
+    padding: 15px;
+    border-top: 1px solid #f5f0ee;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* 4. Cố định nút bấm để không bị co giãn */
+.btn-add-cart {
+    width: 100%;
+    text-align: center;
+    white-space: nowrap; /* Không cho chữ nhảy dòng */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
