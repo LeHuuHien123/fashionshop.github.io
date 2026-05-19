@@ -63,7 +63,7 @@ const userForm = document.getElementById('userForm');
             fd.append('action', 'save'); 
 
             // Trong phần userForm.onsubmit
-            fetch('./php/manage_users.php', { method: 'POST', body: fd })
+            fetch('./php/manager_users.php', { method: 'POST', body: fd })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -356,25 +356,54 @@ function editUser(user) {
 }
 
 // Hàm xóa người dùng
-function deleteUser(id) {
-    if (!confirm("⚠️ Bạn có chắc chắn muốn xóa vĩnh viễn?")) return;
+// Thay đổi cách khai báo thành window.deleteUser để đè hẳn lên code cũ trong admin.php
+window.deleteUser = function(id) {
+    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản khách hàng này không?")) {
+        return;
+    }
 
-    const fd = new FormData();
-    fd.append('id', id);
-    fd.append('action', 'delete');
+    const formData = new FormData();
+    formData.append('action', 'delete');
+    formData.append('id', id);
 
-    fetch('./php/manager_users.php', { method: 'POST', body: fd })
-    .then(res => res.text())
+    // Điền đúng tên file xử lý (đã đồng bộ bỏ chữ r: manage_users.php)
+    fetch('php/manager_users.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Lỗi kết nối máy chủ");
+        return res.json(); // Chuyển đổi dữ liệu nhận được thành Object JSON
+    })
     .then(data => {
-        if (data.trim() === 'success') {
-            const row = document.querySelector(`tr[data-user-id='${id}']`);
-            if (row) row.remove();
-            alert("✅ Đã xóa!");
+        // Kiểm tra biến logic chuẩn JSON
+        if (data.success === true || data.success) {
+            
+            // 1. Bắn thông báo Toast thành công ngọt ngào lên màn hình
+            if (typeof showToast === "function") {
+                showToast("✅ Đã xóa tài khoản thành viên thành công!");
+            } else {
+                alert("✅ Đã xóa tài khoản thành viên thành công!");
+            }
+
+            // 2. Tìm dòng <tr> của khách hàng này trên giao diện và xóa nó đi luôn
+            const userRow = document.getElementById(`user-row-${id}`);
+            if (userRow) {
+                userRow.remove(); 
+            } else {
+                // Nếu không tìm thấy ID dòng, tiến hành load lại trang để cập nhật bảng
+                location.reload();
+            }
+
         } else {
-            alert("❌ Lỗi: " + data);
+            // Nếu backend trả về success = false kèm thông báo lỗi cụ thể (như lỗi khóa ngoại)
+            alert("❌ Lỗi: " + (data.error || data.message || "Không thể xóa tài khoản này"));
         }
     })
-    .catch(err => alert("❌ Lỗi kết nối server (404 Not Found)"));
+    .catch(err => {
+        console.error("Lỗi xóa khách hàng:", err);
+        alert("❌ Lỗi hệ thống: Không thể kết nối với tệp xử lý dữ liệu.");
+    });
 }
 // --- PHẦN 4: QUẢN LÝ ĐƠN HÀNG ---
 
