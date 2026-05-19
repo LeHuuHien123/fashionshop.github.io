@@ -3,38 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập/Đăng ký - Fashion Shop</title> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>Đăng nhập/Đăng ký - Fashion Shop</title> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="css/login.css">
+    <style>
+        /* CSS Định dạng dòng chữ thông báo lỗi nhỏ gọn, tinh tế ngay dưới ô nhập liệu */
+        .error-message {
+            color: #ff4757;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 2px;
+            margin-bottom: 8px;
+            text-align: left;
+            width: 100%;
+            padding-left: 5px;
+            display: none; /* Mặc định ẩn đi, khi có lỗi JS sẽ bật lên */
+        }
+        .form-container input {
+            margin: 5px 0 2px 0 !important; /* Tối ưu khoảng cách để chữ lỗi hiển thị đẹp */
+        }
+    </style>
 </head>
 <body>
     <div class="container" id="container">
         <div class="form-container sign-up">
-            <form action="php/login.php" method="POST">
+            <form id="registerForm">
                 <h1>Tạo tài khoản</h1>
                 <div class="social-icons">
                     <a href="#" class="icon"><i class="fa-brands fa-google-plus-g"></i></a>
                     <a href="#" class="icon"><i class="fa-brands fa-facebook-f"></i></a>
                 </div>
                 <span>Hoặc đăng ký bằng email</span>
+                
                 <input type="text" name="name" placeholder="Họ và tên" required>
+                
                 <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Mật khẩu" required>
-                <button type="submit" name="register">Đăng ký</button>
+                <div id="register-email-error" class="error-message"></div> <input type="password" name="password" placeholder="Mật khẩu" required>
+                
+                <button type="submit">Đăng ký</button>
             </form>
         </div>
 
         <div class="form-container sign-in">
-            <form action="php/login.php" method="POST">
+            <form id="loginForm">
                 <h1>Đăng Nhập</h1>
                 <div class="social-icons">
                     <a href="#" class="icon"><i class="fa-brands fa-google-plus-g"></i></a>
                     <a href="#" class="icon"><i class="fa-brands fa-facebook-f"></i></a>
                 </div>
                 <span>Hoặc sử dụng tài khoản của bạn</span>
+                
                 <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Mật khẩu" required>
-                <a href="forgot.html">Quên mật khẩu?</a>
-                <button type="submit" name="login">Đăng nhập</button>
+                <div id="login-email-error" class="error-message"></div> <input type="password" name="password" placeholder="Mật khẩu" required>
+                <div id="login-pass-error" class="error-message"></div> <a href="forgot.html">Quên mật khẩu?</a>
+                <button type="submit">Đăng nhập</button>
             </form>
         </div>
 
@@ -51,6 +73,6 @@
             </div>
         </div>
     </div>
-    <script src="js/login.js"></script>
+    <script src="js/login.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
