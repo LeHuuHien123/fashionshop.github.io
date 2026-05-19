@@ -17,6 +17,34 @@ function showToast(message) {
         setTimeout(() => toast.remove(), 500);
     }, 2000);
 }
+// 1. Hàm tự động gọi AJAX để lấy danh sách Logs mới về đổ vào Table
+function refreshSystemLogs() {
+    const logsBody = document.getElementById('system-logs-body');
+    if (!logsBody) return; // Nếu không tìm thấy id bảng logs thì dừng lại để tránh lỗi script
+
+    // Hãy đảm bảo đường dẫn này chính xác tuyệt đối trên host/localhost của bạn
+    fetch('php/fetch_logs.php') 
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Mạng hoặc đường dẫn file fetch_logs.php có vấn đề');
+            }
+            return response.text();
+        })
+        .then(htmlData => {
+            // Đè phần text html <tr> từ file PHP vào ruột tbody
+            logsBody.innerHTML = htmlData; 
+        })
+        .catch(error => console.error('Lỗi khi cập nhật nhật ký hệ thống:', error));
+}
+
+// 2. Thiết lập vòng lặp chạy ngầm mỗi 3 giây (3000ms)
+document.addEventListener('DOMContentLoaded', () => {
+    // Gọi chạy ngay lập tức 1 lần khi vừa mở trang tránh việc phải chờ 3 giây đầu
+    refreshSystemLogs(); 
+
+    // Kích hoạt bộ đếm thời gian lặp lại liên tục sau đó
+    setInterval(refreshSystemLogs, 3000); 
+});
 // Biến biểu đồ toàn cục để tránh lỗi ghi đè
 let myBarChart, myPieChart, myLineChart;
 

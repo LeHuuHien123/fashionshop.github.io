@@ -199,6 +199,53 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                         ?>
                     </tbody>
                 </table>
+            </section><section id="products" class="tab-content">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
+                    <h3>Quản Lý Sản Phẩm</h3>
+                    <div style="display: flex; gap: 10px; flex: 1; justify-content: flex-end;">
+                        <input type="text" id="searchProduct" class="status-select" placeholder="🔍 Tìm tên sản phẩm..." onkeyup="filterTable('products', 'searchProduct')">
+                        <button class="btn-main" onclick="openProductModal()"><i class="fa-solid fa-plus"></i> Thêm</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Ảnh</th><th>Tên</th><th>Danh Mục</th><th>Size</th><th>Giá</th><th>Tồn</th><th>Thao tác</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $prodRes = mysqli_query($conn, "SELECT * FROM products ORDER BY id DESC");
+                        while ($row = mysqli_fetch_assoc($prodRes)) {
+                            $imgArr = explode(',', $row['image']);
+                            $first_image = trim($imgArr[0]);
+
+                            // XỬ LÝ ĐƯỜNG DẪN ẢNH THÔNG MINH
+                            if (empty($first_image)) {
+                                $src_image = 'img/default.png';
+                            } elseif (strpos($first_image, 'img/') === 0 || strpos($first_image, 'http') === 0) {
+                                // Nếu đường dẫn đã bắt đầu bằng 'img/' hoặc link mạng thì giữ nguyên
+                                $src_image = $first_image;
+                            } else {
+                                // Nếu chỉ là tên file thô (ví dụ: 'tui_canvas.jpg'), tự bổ sung thư mục 'img/' vào trước
+                                $src_image = 'img/' . $first_image;
+                            }
+
+                            $prodJson = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
+                            echo "<tr data-id='{$row['id']}'>
+                                <td><img src='{$src_image}' style='width:40px; height:50px; object-fit:cover; border-radius:4px;'></td>
+                                <td class='p-name'>{$row['product_name']}</td>
+                                <td class='p-cat'>{$row['category']}</td>
+                                <td class='p-size' style='font-size:11px;'>{$row['size']}</td>
+                                <td class='p-price'>".number_format($row['price'])."đ</td>
+                                <td class='p-stock'>{$row['stock']}</td>
+                                <td>
+                                    <button class='btn-edit' onclick='editProduct({$prodJson})'><i class='fa-solid fa-pen'></i></button>
+                                    <button class='btn-delete' onclick='deleteProduct({$row['id']})'><i class='fa-solid fa-trash'></i></button>
+                                </td>
+                            </tr>";
+                        }
+                        ?>
+                    </tbody>
+                </table>
             </section>
 
             <section id="orders" class="tab-content">
@@ -383,6 +430,7 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                     </tbody>
                 </table>
             </section>
+        
             <div id="logs-tab" class="tab-content">
                 <div class="card" style="background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -402,50 +450,13 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                                     <th style="padding: 12px; color: #718096; font-size: 13px;">Nội Dung Chi Tiết</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <?php
-                                // Truy vấn lấy lịch sử kèm tên và vai trò của người thực hiện
-                                $log_sql = "SELECT l.*, u.fullname, u.role 
-                                            FROM activity_logs l
-                                            JOIN users u ON l.user_id = u.id
-                                            ORDER BY l.created_at DESC 
-                                            LIMIT 100";
-                                
-                                $log_result = mysqli_query($conn, $log_sql);
-
-                                if ($log_result && mysqli_num_rows($log_result) > 0) {
-                                    while ($log = mysqli_fetch_assoc($log_result)) {
-                                        // Đổi màu vai trò để nhìn trực quan
-                                        $role_badge = $log['role'] === 'admin' 
-                                            ? '<span style="background: #fde8e8; color: #e53e3e; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">Admin</span>' 
-                                            : '<span style="background: #e1f5fe; color: #0288d1; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">Staff</span>';
-                                        
-                                        // Đổi màu chữ theo loại hành động
-                                        $action_color = '#2c3e50';
-                                        if(strpos($log['action'], 'Xóa') !== false) $action_color = '#e53e3e';
-                                        if(strpos($log['action'], 'Thêm') !== false) $action_color = '#38a169';
-                                        ?>
-                                        <tr style="border-bottom: 1px solid #edf2f7; font-size: 13.5px;">
-                                            <td style="padding: 12px; color: #4a5568;">
-                                                <?php echo date('d/m/Y H:i:s', strtotime($log['created_at'])); ?>
-                                            </td>
-                                            <td style="padding: 12px; font-weight: 600; color: #2d3748;">
-                                                <?php echo htmlspecialchars($log['fullname']); ?>
-                                            </td>
-                                            <td style="padding: 12px;"><?php echo $role_badge; ?></td>
-                                            <td style="padding: 12px; font-weight: 600; color: <?php echo $action_color; ?>;">
-                                                <?php echo htmlspecialchars($log['action']); ?>
-                                            </td>
-                                            <td style="padding: 12px; color: #4a5568; max-width: 400px; word-wrap: break-word;">
-                                                <?php echo htmlspecialchars($log['target']); ?>
-                                            </td>
-                                        </tr>
-                                        <?php
-                                    }
-                                } else {
-                                    echo "<tr><td colspan='5' style='text-align:center; padding: 30px; color: #a0aec0;'>Chưa có hoạt động nào được ghi lại!</td></tr>";
-                                }
-                                ?>
+                            
+                            <tbody id="system-logs-body">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 30px; color: #718096;">
+                                        <i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang kết nối dữ liệu hệ thống hoạt động...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
