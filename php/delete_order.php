@@ -4,18 +4,26 @@ include 'datk.php';
 
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ids'])) {
-    $ids = mysqli_real_escape_string($conn, $_POST['ids']);
-    
-    // Xóa đơn hàng dựa trên danh sách ID gộp
-    $sql = "DELETE FROM orders WHERE id IN ($ids)";
+// Kiểm tra quyền (bảo mật)
+if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'staff')) {
+    echo json_encode(['success' => false, 'message' => 'Không có quyền truy cập!']);
+    exit();
+}
+
+// Hỗ trợ nhận ID đơn hàng (thường là POST hoặc GET)
+$id = isset($_POST['id']) ? intval($_POST['id']) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
+
+if ($id > 0) {
+    // 1. Thực hiện xóa trong database
+    $sql = "DELETE FROM orders WHERE id = $id";
 
     if (mysqli_query($conn, $sql)) {
-        echo json_encode(['success' => true]);
+        // Trả về success: true để JS biết mà xóa dòng trên giao diện
+        echo json_encode(['success' => true, 'deleted_id' => $id]);
     } else {
-        echo json_encode(['success' => false, 'message' => mysqli_error($conn)]);
+        echo json_encode(['success' => false, 'message' => 'Lỗi database: ' . mysqli_error($conn)]);
     }
 } else {
-    echo json_encode(['success' => false, 'message' => 'Dữ liệu gửi lên không hợp lệ.']);
+    echo json_encode(['success' => false, 'message' => 'ID đơn hàng không hợp lệ.']);
 }
 ?>

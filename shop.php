@@ -187,6 +187,7 @@ if ($result) {
             </div>
         </div>
     </nav>
+<?php include 'flash_sale_popup.php'; ?>
 
     <div class="booking-page">
         <aside class="filter-sidebar">

@@ -426,6 +426,7 @@ if ($res_user && mysqli_num_rows($res_user) > 0) {
             </div>
         </div>
     </nav>
+<?php include 'flash_sale_popup.php'; ?>
 
         <div class="cart-container">
     <div class="tab-btn-container">

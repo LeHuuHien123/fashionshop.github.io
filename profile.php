@@ -218,6 +218,8 @@ $avatar = !empty($user['avatar']) ? $user['avatar'] : 'default-avatar.png';
             </div>
         </div>
     </nav> 
+    <?php include 'flash_sale_popup.php'; ?>
+
     <div class="container">
         <div class="sidebar">
             <div style="position: relative; display: inline-block;">

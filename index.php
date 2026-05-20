@@ -159,6 +159,7 @@ session_start();
         </div>
     </div>
 </nav>
+<?php include 'flash_sale_popup.php'; ?>
 <div class="product-welcome-effect">
     <img src="img/banner/1.png" class="flying-shirt left" alt="Shirt Left">
     <img src="img/banner/1.png" class="flying-shirt right" alt="Shirt Right">

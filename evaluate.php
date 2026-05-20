@@ -148,6 +148,7 @@ $reviews_res = mysqli_query($conn, "SELECT * FROM evaluates ORDER BY created_at 
             </div>
         </div>
     </nav>
+<?php include 'flash_sale_popup.php'; ?>
 
     <div class="eval-wrapper">
         <div class="rating-overview">

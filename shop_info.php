@@ -289,6 +289,7 @@ $main_image = trim($all_images[0]);
         </div>
     </div>
 </nav>
+<?php include 'flash_sale_popup.php'; ?>
 
 <div class="container">
     <div class="image-side">

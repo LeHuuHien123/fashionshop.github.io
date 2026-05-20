@@ -54,6 +54,7 @@ while ($row = mysqli_fetch_assoc($res)) {
             <a href="booking.php" class="btn-main">Đặt Tiệc Ngay</a>
         </div>
     </nav>
+<?php include 'flash_sale_popup.php'; ?>
 
 <!-- ===== PAGE ===== -->
 <div class="booking-page">

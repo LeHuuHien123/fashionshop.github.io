@@ -492,44 +492,52 @@ window.deleteUser = async function(id) {
 
 // --- QUẢN LÝ ĐƠN HÀNG ---
 
-function updateGroupStatus(listIds, newStatus, selectElement) {
-    if(!confirm('Xác nhận thay đổi trạng thái?')) return;
-    fetch('php/update_order_status.php', {  
+window.updateGroupStatus = function(listIds, newStatus, selectElement) {
+    // 1. Gửi lệnh cập nhật xuống PHP
+    fetch('php/update_order_status.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `ids=${listIds}&status=${newStatus}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            alert('Cập nhật thành công!');
-            selectElement.style.background = (newStatus === 'delivered') ? '#d4edda' : '#fff';
-        } else { alert('Lỗi: ' + data.message); }
-    });
-}
-
-// XÓA ĐƠN HÀNG REAL-TIME MODAL MỚI
-window.deleteOrderGroup = async function(listIds) {
-    const confirmDelete = await hunoConfirm("⚠️ Xác nhận xóa vĩnh viễn nhóm đơn hàng này?");
-    if (!confirmDelete) return;
-
-    const params = new URLSearchParams();
-    params.append('ids', listIds);
-
-    fetch('php/delete_order.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        body: new URLSearchParams({ ids: listIds, status: newStatus })
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert('Đã xóa thành công!');
-            location.reload(); 
-        } else { alert('Lỗi: ' + data.message); }
+            showToast("✅ Cập nhật trạng thái thành công!");
+            
+            // 2. Realtime đổi màu select box
+            const colors = {
+                'waiting_confirm': '#fff3cd',
+                'delivered': '#d4edda',
+                'cancelled': '#f8d7da',
+                'confirmed': '#fff',
+                'in_transit': '#fff'
+            };
+            selectElement.style.backgroundColor = colors[newStatus] || '#fff';
+        } else {
+            showToast("❌ Lỗi: " + data.message);
+        }
     })
-    .catch(err => alert('Lỗi kết nối: ' + err.message));
-}
+    .catch(err => console.error("Lỗi kết nối:", err));
+}; // <--- Chỉ để 1 dấu ngoặc đóng ở đây thôi
+
+// XÓA ĐƠN HÀNG REAL-TIME MODAL MỚI
+// Hàm xóa đơn hàng gọi qua AJAX
+window.deleteOrder = async function(orderId) {
+    const confirmDelete = await hunoConfirm("Bạn có chắc chắn muốn xóa?");
+    if (!confirmDelete) return;
+
+    fetch('php/delete_order.php?id=' + orderId)
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Xóa DOM ngay lập tức
+            const row = document.getElementById('order-row-' + orderId);
+            const detailRow = document.getElementById('details-' + orderId);
+            if (row) row.remove();
+            if (detailRow) detailRow.remove();
+            showToast("Đã xóa đơn hàng!");
+        }
+    });
+};
 
 // --- ĐÓNG MODALS ---
 function closeProductModal() { document.getElementById('productModal').style.display = 'none'; }
@@ -753,6 +761,7 @@ function printInvoice(orderIds) {
     const printWindow = window.open(url, '_blank', `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`);
     if (printWindow) printWindow.focus();
 }
+
 // Hàm lọc danh sách Nhật ký hoạt động theo ngày chọn
         window.filterLogsByDate = function() {
             const filterDate = document.getElementById('filterLogDate').value;
@@ -790,4 +799,12 @@ function printInvoice(orderIds) {
                 row.style.display = '';
             });
         };
+        
 // HẾT CODE ADMIN.JS
+setInterval(() => {
+    console.log("Đang kiểm tra dữ liệu mới...");
+    // Cách 1: Nếu bảng đơn hàng của ní đơn giản, có thể fetch lại nội dung trang admin
+    // Cách 2: Tối ưu hơn là dùng một file PHP riêng để đếm số lượng đơn hàng
+    // Ví dụ đơn giản nhất là refresh nhẹ phần thân bảng nếu cần:
+    // fetch('admin.php').then(res => res.text()).then(html => { ... update bảng ... });
+}, 3000);

@@ -49,6 +49,9 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                 <li class="menu-item" onclick="showTab(event, 'logs-tab')">
                     <i class="fa-solid fa-timeline"></i> Nhật Ký Hoạt Động
                 </li>
+                <li class="menu-item" onclick="showTab(event, 'flash-sale-campaign')">
+                    <i class="fa-solid fa-bolt"></i> Tạo Flash Sale
+                </li>
                 <?php endif; ?>
                 <li class="nav-item logout-item">
                     <a href="php/logout.php" class="nav-link logout-link">
@@ -325,12 +328,15 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                                     </select>
                                 </td>
                                 <td>
-                                    <button onclick="toggleDetails('details-<?= $first_id ?>')" class="btn-edit" title="Xem chi tiết">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </button>
-                                    <button class="btn-delete" onclick="deleteOrderGroup('<?= $list_ids ?>')" title="Xóa đơn">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                                    <td>
+                                        <button onclick="toggleDetails('details-<?= $first_id ?>')" class="btn-edit" title="Xem chi tiết">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        
+                                        <button onclick="deleteOrder('<?= $first_id ?>')" class="btn-delete" title="Xóa đơn" style="background:#e74c3c; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </td>
                                 </td>
                             </tr>
 
@@ -404,43 +410,72 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                     </thead>
                     <tbody>
                         <?php
-                        $couponRes = mysqli_query($conn, "SELECT * FROM coupons ORDER BY id DESC");
-                        while ($row = mysqli_fetch_assoc($couponRes)) {
-                            // Mã hóa dữ liệu dạng JSON để truyền vào hàm sửa dễ dàng
-                            $couponJson = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
+                        // Query lấy danh sách đơn hàng đã gộp
+                        $sql_grouped = "SELECT u.fullname, o.phone, o.address, o.status, o.payment_method, 
+                                                o.created_at, o.coupon_code,
+                                                SUM(o.total_price) as total_goods_price, 
+                                                MAX(o.discount_amount) as total_discount,
+                                                GROUP_CONCAT(o.id) as list_ids 
+                                        FROM orders o 
+                                        JOIN users u ON o.user_id = u.id 
+                                        WHERE o.status != 'pending' 
+                                        GROUP BY o.user_id, o.created_at, o.status, o.payment_method, o.coupon_code
+                                        ORDER BY o.created_at DESC";
+                        
+                        $orderRes = mysqli_query($conn, $sql_grouped);
+
+                        while ($o = mysqli_fetch_assoc($orderRes)) {
+                            $list_ids = $o['list_ids'];
+                            $first_id = explode(',', $list_ids)[0]; // Dùng ID đầu tiên đại diện cho nhóm
+                            $order_code = "DH-" . date("dmy-Hi", strtotime($o['created_at'])) . "-" . $first_id;
                             
-                            // Định dạng hiển thị trạng thái
-                            $statusText = $row['status'] == 1 ? '🟢 Hoạt động' : '🔴 Khóa';
-                            $statusStyle = $row['status'] == 1 ? 'background-color: #d4edda; color: #155724;' : 'background-color: #f8d7da; color: #721c24;';
-                            
-                            // Kiểm tra nếu hết hạn thì đổi màu cảnh báo ngày
-                            $isExpired = (strtotime($row['expiry_date']) < strtotime(date('Y-m-d')));
-                            $dateStyle = $isExpired ? "color: red; font-weight: bold;" : "";
-                            
-                            // Đọc dữ liệu số lượng từ cơ sở dữ liệu để hiển thị trực quan
-                            $usedCount = isset($row['used_count']) ? intval($row['used_count']) : 0;
-                            $usageLimit = isset($row['usage_limit']) ? intval($row['usage_limit']) : 0;
-                            
-                            echo "<tr data-id='{$row['id']}'>
-                                <td>#{$row['id']}</td>
-                                <td><strong style='color:#e67e22;'>{$row['code']}</strong></td>
-                                <td><strong>".number_format($row['discount_value'])."đ</strong></td>
-                                <td>".number_format($row['min_order'])."đ</td>
-                                <td style='{$dateStyle}'>".date('d/m/Y', strtotime($row['expiry_date']))." ".($isExpired ? '(Hết hạn)' : '')."</td>
-                                
-                                <td>
-                                    <span style='font-weight: 600; color: #2c3e50;'>{$usedCount}</span> / <span style='color: #7f8c8d;'>{$usageLimit}</span>
-                                    ".($usedCount >= $usageLimit ? " <small style='color: #e74c3c; font-weight:bold;'>(Hết lượt)</small>" : "")."
-                                </td>
-                                
-                                <td><span style='padding: 5px 10px; border-radius: 4px; font-size: 12px; {$statusStyle}'>{$statusText}</span></td>
-                                <td>
-                                    <button class='btn-edit' onclick='editCoupon({$couponJson})'><i class='fa-solid fa-pen'></i></button>
-                                    <button class='btn-delete' onclick='deleteCoupon({$row['id']})'><i class='fa-solid fa-trash'></i></button>
-                                </td>
-                            </tr>";
-                        }
+                            $grand_total = $o['total_goods_price'] - $o['total_discount'];
+                            if ($grand_total < 0) $grand_total = 0;
+
+                            $status_style = "";
+                            if ($o['status'] == 'delivered') $status_style = "background-color: #d4edda;";
+                            else if ($o['status'] == 'cancelled') $status_style = "background-color: #f8d7da;";
+                            else if ($o['status'] == 'waiting_confirm') $status_style = "background-color: #fff3cd;";
+
+                            $voucher_display = !empty($o['coupon_code']) 
+                                ? "<span style='background:#fff3cd; color:#856404; padding:3px 6px; border-radius:4px; font-size:12px;'>🎟️ {$o['coupon_code']}</span>" 
+                                : "<span style='color:#aaa; font-size:13px;'>Không</span>";
                         ?>
+                            <tr id="order-row-<?= $first_id ?>">
+                                <td><strong><?= $order_code ?></strong></td>
+                                <td><?= date('d/m/Y H:i', strtotime($o['created_at'])) ?></td>
+                                <td><?= htmlspecialchars($o['fullname']) ?></td>
+                                <td><?= $voucher_display ?></td>
+                                <td style="color: #e67e22; font-weight:bold;"><?= number_format($grand_total) ?>đ</td>
+                                <td><?= strtoupper($o['payment_method']) ?></td>
+                                <td>
+                                    <select class="status-select" style="<?= $status_style ?> padding: 5px; border-radius: 4px;" 
+                                            onchange="updateGroupStatus('<?= $list_ids ?>', this.value, this)">
+                                        <option value="waiting_confirm" <?= $o['status'] == 'waiting_confirm' ? 'selected' : '' ?>>⏳ Chờ duyệt</option>
+                                        <option value="confirmed" <?= $o['status'] == 'confirmed' ? 'selected' : '' ?>>✅ Xác nhận</option>
+                                        <option value="in_transit" <?= $o['status'] == 'in_transit' ? 'selected' : '' ?>>🚚 Đang giao</option>
+                                        <option value="delivered" <?= $o['status'] == 'delivered' ? 'selected' : '' ?>>🏁 Hoàn tất</option>
+                                        <option value="cancelled" <?= $o['status'] == 'cancelled' ? 'selected' : '' ?>>❌ Hủy</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button onclick="toggleDetails('details-<?= $first_id ?>')" class="btn-edit" title="Xem chi tiết">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                    <button onclick="deleteOrder('<?= $first_id ?>')" class="btn-delete" style="background:#e74c3c; color:white; border:none; padding:5px 10px; cursor:pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <tr id="details-<?= $first_id ?>" style="display: none; background: #f9f9f9;">
+                                <td colspan="8"> 
+                                    <div style="padding: 15px; border-left: 4px solid #e67e22;">
+                                        <p>Sản phẩm trong đơn: ...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php } ?>
                     </tbody>
                 </table>
             </section>
@@ -480,6 +515,88 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+            
+            <div id="flash-sale-campaign" class="tab-content">
+                <div class="card" style="background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h2 style="color: #e74c3c; margin-bottom: 5px;"><i class="fa-solid fa-clock"></i> Quản Lý Bộ Sưu Tập Flash Sale Động</h2>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 20px;">Thiết lập thời gian chạy (phút), chữ hiển thị mã giảm giá và chọn sản phẩm độc quyền.</p>
+
+                    <form action="php/save_flash_campaign.php" method="POST">
+                        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">Thời gian diễn ra chiến dịch (Số phút):</label>
+                                <input type="number" name="duration_minutes" min="1" placeholder="Ví dụ: 5" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            </div>
+
+                            <div style="flex: 1;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">Chọn Mã Giảm Giá hiển thị trên Bong Bóng:</label>
+                                <select name="campaign_voucher" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer;">
+                                    <option value="">-- Chọn một mã giảm giá đang chạy --</option>
+                                    
+                                    <?php
+                                    if (isset($conn) && $conn) {
+                                        // Chuẩn cột discount_value 100% theo database của ní
+                                        $sql_coupons = "SELECT code, discount_value FROM coupons ORDER BY id DESC";
+                                        $res_coupons = mysqli_query($conn, $sql_coupons);
+                                        
+                                        if ($res_coupons && mysqli_num_rows($res_coupons) > 0) {
+                                            while ($c = mysqli_fetch_assoc($res_coupons)) {
+                                                $code_name = htmlspecialchars($c['code']);
+                                                $discount_val = number_format(intval($c['discount_value']));
+                                                
+                                                echo "<option value='{$code_name}'>{$code_name} (Giảm {$discount_val}đ)</option>";
+                                            }
+                                        } else {
+                                            echo "<option value='' disabled>Chưa có mã giảm giá nào trong hệ thống!</option>";
+                                        }
+                                    } else {
+                                        echo "<option value='' disabled>Lỗi: Không tìm thấy kết nối Database (\$conn)!</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 25px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 10px; font-size: 14px;">Chọn sản phẩm thuộc Bộ Sưu Tập này:</label>
+                            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa;">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid #ddd; background: #eee;">
+                                            <th style="padding: 8px; width: 40px;">Chọn</th>
+                                            <th style="padding: 8px;">Hình ảnh</th>
+                                            <th style="padding: 8px;">Tên sản phẩm</th>
+                                            <th style="padding: 8px; text-align: right;">Giá bán</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $sql_p = "SELECT id, product_name, price, image FROM products ORDER BY id DESC";
+                                        $res_p = mysqli_query($conn, $sql_p);
+                                        while ($p = mysqli_fetch_assoc($res_p)) {
+                                        ?>
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 8px; text-align: center;">
+                                                <input type="checkbox" name="product_ids[]" value="<?= $p['id'] ?>" style="transform: scale(1.2); cursor: pointer;">
+                                            </td>
+                                            <td style="padding: 8px;">
+                                                <img src="uploads/<?= htmlspecialchars($p['image']) ?>" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" onerror="this.src='img/logo/1.png'">
+                                            </td>
+                                            <td style="padding: 8px; font-weight: bold;"><?= htmlspecialchars($p['product_name']) ?></td>
+                                            <td style="padding: 8px; text-align: right; color: #e67e22; font-weight: bold;"><?= number_format($p['price']) ?>đ</td>
+                                        </tr>
+                                        <?php } ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <button type="submit" style="padding: 12px 25px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%;">
+                            💾 Lưu & Kích Hoạt Chiến Dịch Bộ Sưu Tập Mới
+                        </button>
+                    </form>
                 </div>
             </div>
         </main>

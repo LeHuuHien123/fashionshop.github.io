@@ -8,7 +8,9 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
     exit();
 }
 
-header('Content-Type: application/json');
+// Bật header JSON ngay từ đầu
+header('Content-Type: application/json; charset=utf-8');
+
 // Hỗ trợ nhận action từ cả POST và GET để tránh lỗi không nhận diện được hành động
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $session_user_id = (int)($_SESSION['user_id'] ?? 0); // Lấy ID của người đang thực hiện thao tác
@@ -136,5 +138,3 @@ if ($action === 'delete') {
 }
 
 $conn->close();
-?>                                                                    
-<!-- hh -->
