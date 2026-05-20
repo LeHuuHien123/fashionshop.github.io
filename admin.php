@@ -288,7 +288,7 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                             $list_ids = $o['list_ids'];
                             $first_id = explode(',', $list_ids)[0];
                             // Tạo mã đơn dựa trên thời gian để dễ phân biệt
-                            $order_code = "DH-" . date("dmy-Hi", strtotime($o['created_at'])) . "-" . $first_id;
+                                $order_code = "DH-" . date("dmy-Hi", strtotime($o['created_at'])) . "-" . $first_id;
 
                             // TÍNH TOÁN LẠI TỔNG TIỀN THỰC TẾ: Tiền hàng trừ đi tiền giảm giá của Voucher
                             $grand_total = $o['total_goods_price'] - $o['total_discount'];
@@ -333,7 +333,8 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                             </tr>
 
                             <tr id="details-<?= $first_id ?>" style="display: none; background: #f9f9f9;">
-                                <td colspan="8"> <div style="padding: 15px; border-left: 4px solid #e67e22; margin: 10px;">
+                                <td colspan="8"> 
+                                    <div style="padding: 15px; border-left: 4px solid #e67e22; margin: 10px;">
                                         <h4 style="margin-bottom: 10px;">Sản phẩm trong đơn:</h4>
                                         <table style="width: 100%; border-collapse: collapse;">
                                             <?php
@@ -352,13 +353,23 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                                                 </tr>
                                             <?php } ?>
                                         </table>
+                                        
                                         <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ddd; text-align: right; font-size: 14px;">
                                             <div>Tiền hàng: <strong><?= number_format($o['total_goods_price']) ?>đ</strong></div>
                                             <div style="color: #c0392b;">Voucher giảm: <strong>-<?= number_format($o['total_discount']) ?>đ</strong></div>
                                             <div style="font-size: 16px; color: #e67e22; margin-top: 5px;">Thực thu: <strong><?= number_format($grand_total) ?>đ</strong></div>
                                         </div>
+                                        
                                         <div style="margin-top: 10px; font-size: 13px; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #eee;">
                                             <strong>Địa chỉ giao hàng:</strong> <?= htmlspecialchars($o['address']) ?> | <strong>SĐT:</strong> <?= $o['phone'] ?>
+                                        </div>
+
+                                        <div style="text-align: right; margin-top: 12px;">
+                                            <button class="btn-print-invoice" 
+                                                    onclick="printInvoice('<?= $list_ids ?>')" 
+                                                    style="background: #2c3e50; color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;">
+                                                <i class="fa-solid fa-file-invoice"></i> Xuất hóa đơn
+                                            </button>
                                         </div>
                                     </div>
                                 </td>

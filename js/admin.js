@@ -739,4 +739,18 @@ function filterOrdersByDate() {
         }
     }
 }
+function printInvoice(orderIds) {
+    if (!orderIds) {
+        alert("Không tìm thấy mã đơn hàng hợp lệ!");
+        return;
+    }
+    const url = `php/print_invoice.php?ids=${orderIds}`;
+    const width = 800;
+    const height = 900;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    
+    const printWindow = window.open(url, '_blank', `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`);
+    if (printWindow) printWindow.focus();
+}
 // HẾT CODE ADMIN.JS
