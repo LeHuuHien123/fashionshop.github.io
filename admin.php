@@ -45,9 +45,11 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                 <li class="menu-item" onclick="showTab(event, 'coupons')">
                     <i class="fa-solid fa-ticket"></i> Mã Giảm Giá
                 </li>
+                <?php if ($_SESSION['role'] === 'admin'): ?>
                 <li class="menu-item" onclick="showTab(event, 'logs-tab')">
-                    <i class="fa-solid fa-clipboard-list"></i> Nhật Ký Hoạt Động
+                    <i class="fa-solid fa-timeline"></i> Nhật Ký Hoạt Động
                 </li>
+                <?php endif; ?>
                 <li class="nav-item logout-item">
                     <a href="php/logout.php" class="nav-link logout-link">
                         <i class="fa-solid fa-right-from-bracket"></i>
@@ -445,10 +447,16 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
         
             <div id="logs-tab" class="tab-content">
                 <div class="card" style="background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                         <h3 style="margin: 0; font-size: 18px; color: #2c3e50;">
                             <i class="fa-solid fa-timeline" style="color: #e67e22;"></i> Nhật Ký Hoạt Động Hệ Thống
                         </h3>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label for="filterLogDate" style="font-size: 13.5px; font-weight: 600; color: #5d4037;">Lọc theo ngày:</label>
+                            <input type="date" id="filterLogDate" class="status-select" style="margin: 0; padding: 8px 12px; border-radius: 6px;" onchange="filterLogsByDate()">
+                            <button onclick="clearLogFilter()" style="padding: 8px 12px; background: #7f8c8d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-rotate-left"></i> Xem tất cả</button>
+                        </div>
                     </div>
 
                     <div style="overflow-x: auto;">

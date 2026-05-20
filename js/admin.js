@@ -753,4 +753,41 @@ function printInvoice(orderIds) {
     const printWindow = window.open(url, '_blank', `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`);
     if (printWindow) printWindow.focus();
 }
+// Hàm lọc danh sách Nhật ký hoạt động theo ngày chọn
+        window.filterLogsByDate = function() {
+            const filterDate = document.getElementById('filterLogDate').value;
+            const rows = document.querySelectorAll('#system-logs-body tr');
+
+            if (!filterDate) return;
+
+            rows.forEach(row => {
+                // Kiểm tra xem dòng này có chứa dữ liệu thực tế không (tránh dòng 'Đang tải' hoặc 'Không tìm thấy')
+                const dateCell = row.cells[0];
+                if (dateCell && row.cells.length > 1) {
+                    const cellText = dateCell.innerText.trim(); // Định dạng thường là: "20/05/2026 14:30" hoặc tương tự
+                    
+                    // Chuyển đổi định dạng YYYY-MM-DD từ ô input sang định dạng ngày trong bảng để so sánh
+                    // Tùy theo file xử lý AJAX trả về dạng nào (VD: 20-05-2026 hoặc 2026-05-20)
+                    // Dưới đây là logic tách chuỗi vạn năng dựa trên dữ liệu ngày tháng chuẩn:
+                    const parts = filterDate.split('-'); // [YYYY, MM, DD]
+                    const formattedDateTarget1 = `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
+                    const formattedDateTarget2 = `${parts[0]}-${parts[1]}-${parts[2]}`; // YYYY-MM-DD
+
+                    if (cellText.includes(formattedDateTarget1) || cellText.includes(formattedDateTarget2) || cellText.includes(filterDate)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        };
+
+        // Hàm xóa bộ lọc ngày, hiển thị lại toàn bộ nhật ký
+        window.clearLogFilter = function() {
+            document.getElementById('filterLogDate').value = '';
+            const rows = document.querySelectorAll('#system-logs-body tr');
+            rows.forEach(row => {
+                row.style.display = '';
+            });
+        };
 // HẾT CODE ADMIN.JS
