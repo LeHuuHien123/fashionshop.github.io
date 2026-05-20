@@ -16,24 +16,24 @@ $session_user_id = (int)($_SESSION['user_id'] ?? 0);
 
 // --- LOGIC XÓA SẢN PHẨM ---
 if ($action === 'delete') {
-    $id = isset($_POST['id']) ? (int)$POST['id'] : 0;
+    $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+    
     if ($id > 0) {
         mysqli_query($conn, "DELETE FROM orders WHERE product_id = $id");
         
         if (mysqli_query($conn, "DELETE FROM products WHERE id = $id")) {
             safe_huno_log($session_user_id, 'Xóa sản phẩm', 'Đã xóa hoàn toàn sản phẩm có ID #' . $id);
-            echo json_encode(['success' => true]);
+            echo "success"; 
         } else {
-            echo json_encode(['success' => false, 'message' => 'Lỗi SQL: ' . mysqli_error($conn)]);
+            echo "Lỗi SQL: " . mysqli_error($conn);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'ID sản phẩm không hợp lệ!']);
+        echo "ID sản phẩm không hợp lệ!";
     }
     exit;
 }
 
 // --- LOGIC THÊM HOẶC SỬA SẢN PHẨM ---
-// Kiểm tra an toàn cả hai khóa "product_name" và "name" để triệt tiêu hoàn toàn lỗi dòng 35
 $name = '';
 if (isset($_POST['product_name'])) {
     $name = mysqli_real_escape_string($conn, $_POST['product_name']);
@@ -44,13 +44,11 @@ if (isset($_POST['product_name'])) {
 $category = isset($_POST['category']) ? mysqli_real_escape_string($conn, $_POST['category']) : '';
 $description = isset($_POST['description']) ? mysqli_real_escape_string($conn, $_POST['description']) : '';
 
-// Làm sạch chuỗi giá tiền thô (loại bỏ dấu phẩy hoặc ký tự chữ đ)
 $price_raw = isset($_POST['price']) ? $_POST['price'] : '0';
 $price = (int)preg_replace('/[^0-9]/', '', $price_raw);
 
 $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
-// Xử lý thông tin kích cỡ và tính tổng tồn kho
 $size_standard = '';
 $total_stock = 0;
 if (isset($_POST['size'])) {
@@ -64,7 +62,6 @@ if (isset($_POST['size'])) {
     }
 }
 
-// Lấy danh sách ảnh cũ phục vụ việc Sửa sản phẩm
 $current_images = [];
 if ($id > 0) {
     $res = mysqli_query($conn, "SELECT image FROM products WHERE id=$id");
@@ -75,7 +72,6 @@ if ($id > 0) {
     }
 }
 
-// Loại bỏ ảnh cũ nếu người dùng chọn xóa trên giao diện admin
 $deleted_images_str = $_POST['deleted_images'] ?? '';
 if (!empty($deleted_images_str)) {
     $deleted_array = array_map('trim', explode(',', $deleted_images_str));
@@ -84,7 +80,6 @@ if (!empty($deleted_images_str)) {
     });
 }
 
-// Tiến hành tải lên (Upload) các tập tin hình ảnh mới bổ sung
 $uploaded_files = [];
 if (isset($_FILES['product_images']) && is_array($_FILES['product_images']['name'])) {
     $file_count = count($_FILES['product_images']['name']);
@@ -103,13 +98,13 @@ if (isset($_FILES['product_images']) && is_array($_FILES['product_images']['name
             
             $target_file = $target_dir . $new_name;
             if (move_uploaded_file($tmp_name, $target_file)) {
-                $uploaded_files[] = $new_name;
+                // ĐÃ SỬA: Thêm trực tiếp tiền tố 'img/' vào tên file để lưu đúng cấu trúc database của bạn
+                $uploaded_files[] = 'img/' . $new_name;
             }
         }
     }
 }
 
-// Hợp nhất mảng ảnh cũ và mới
 $final_images = array_merge($current_images, $uploaded_files);
 $image_string = implode(',', $final_images);
 
@@ -118,42 +113,36 @@ if (empty($image_string)) {
 }
 
 if ($id > 0) {
-    // Thực thi câu lệnh UPDATE
     $sql = "UPDATE products SET product_name='$name', category='$category', size='$size_standard', price='$price', stock='$total_stock', image='$image_string', description='$description' WHERE id=$id";
     $log_action = 'Sửa sản phẩm';
     $log_target = 'Đã cập nhật thông tin sản phẩm: "' . $name . '" (ID: #' . $id . ')';
 } else {
-    // Thực thi câu lệnh INSERT mới
     $sql = "INSERT INTO products (product_name, category, size, price, stock, image, description) VALUES ('$name', '$category', '$size_standard', '$price', '$total_stock', '$image_string', '$description')";
     $log_action = 'Thêm sản phẩm';
     $log_target = 'Đã thêm sản phẩm mới vào cửa hàng: "' . $name . '"';
 }
 
 if (mysqli_query($conn, $sql)) {
-    // Gọi hàm ghi log an toàn đã tạo ở Bước 1
     safe_huno_log($session_user_id, $log_action, $log_target);
 
+    // Lấy lại thông tin sản phẩm chuẩn vừa lưu từ DB để phản hồi chuẩn xác cho JS nhận
     $new_id = ($id > 0) ? $id : mysqli_insert_id($conn);
-    $first_image = !empty($final_images) ? reset($final_images) : 'img/default.png';
     
-    if (strpos($first_image, 'img/') !== 0 && strpos($first_image, 'http') !== 0) {
-        $display_image = 'img/' . $first_image;
-    } else {
-        $display_image = $first_image;
-    }
-    
+    // Đồng bộ lại chuỗi dữ liệu kích cỡ và tồn kho thực tế
     echo json_encode([
         'success' => true,
         'product' => [
             'id' => $new_id,
             'name' => $name,
             'category' => $category,
+            'size' => $size_standard,
             'price' => number_format($price) . 'đ',
             'stock' => $total_stock,
-            'image' => $display_image
+            'image' => $image_string // Trả về chuỗi chứa đầy đủ tiền tố 'img/' phân tách bằng dấu phẩy
         ]
     ]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Lỗi thực thi SQL: ' . mysqli_error($conn)]);
 }
 exit;
+?>  
