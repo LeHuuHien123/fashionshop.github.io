@@ -145,4 +145,4 @@ if (mysqli_query($conn, $sql)) {
     echo json_encode(['success' => false, 'message' => 'Lỗi thực thi SQL: ' . mysqli_error($conn)]);
 }
 exit;
-?>  
+?>/ll
