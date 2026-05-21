@@ -261,13 +261,14 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                         <input type="text" id="searchOrder" class="status-select" placeholder="🔍 Tìm mã đơn, khách hàng..." onkeyup="filterTable('orders', 'searchOrder')">
                     </div>
                 </div>
-                <table>
+                <table id="orders-table">
                     <thead>
                         <tr>
                             <th>Mã Đơn</th>
                             <th>Ngày Đặt</th>
                             <th>Khách Hàng</th>
-                            <th>Mã Voucher</th> <th>Tổng Tiền</th>
+                            <th>Voucher</th>
+                            <th>Tổng Tiền</th>
                             <th>PTTT</th>
                             <th>Trạng Thái</th>
                             <th>Hành động</th>
@@ -275,207 +276,151 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                     </thead>
                     <tbody>
                         <?php
-                        // CẬP NHẬT LOGIC SQL: Lấy thêm coupon_code và số tiền giảm lớn nhất MAX(o.discount_amount) của nhóm đơn hàng đó
+                        // Sửa lại SQL: Tự tính tổng hàng và tổng giảm giá ngay trong Query
                         $sql_grouped = "SELECT u.fullname, o.phone, o.address, o.status, o.payment_method, 
                                             o.created_at, o.coupon_code,
-                                            SUM(o.total_price) as total_goods_price, 
-                                            MAX(o.discount_amount) as total_discount,
+                                            SUM(o.total_price) as total_price, 
+                                            MAX(o.discount_amount) as discount_amount,
                                             GROUP_CONCAT(o.id) as list_ids 
                                         FROM orders o 
                                         JOIN users u ON o.user_id = u.id 
                                         WHERE o.status != 'pending' 
                                         GROUP BY o.user_id, o.created_at, o.status, o.payment_method, o.coupon_code
                                         ORDER BY o.created_at DESC";
-                        
+
                         $orderRes = mysqli_query($conn, $sql_grouped);
 
-                        while ($o = mysqli_fetch_assoc($orderRes)) {
-                            $list_ids = $o['list_ids'];
-                            $first_id = explode(',', $list_ids)[0];
-                            // Tạo mã đơn dựa trên thời gian để dễ phân biệt
+                        if ($orderRes && mysqli_num_rows($orderRes) > 0) {
+                            while ($o = mysqli_fetch_assoc($orderRes)) {
+                                $list_ids = $o['list_ids'];
+                                $first_id = explode(',', $list_ids)[0];
                                 $order_code = "DH-" . date("dmy-Hi", strtotime($o['created_at'])) . "-" . $first_id;
-
-                            // TÍNH TOÁN LẠI TỔNG TIỀN THỰC TẾ: Tiền hàng trừ đi tiền giảm giá của Voucher
-                            $grand_total = $o['total_goods_price'] - $o['total_discount'];
-                            if ($grand_total < 0) $grand_total = 0; // Chặn tiền âm bảo vệ hệ thống
-
-                            // Xác định màu sắc trạng thái
-                            $status_style = "";
-                            if ($o['status'] == 'delivered') $status_style = "background-color: #d4edda;";
-                            else if ($o['status'] == 'cancelled') $status_style = "background-color: #f8d7da;";
-                            else if ($o['status'] == 'waiting_confirm') $status_style = "background-color: #fff3cd;";
-
-                            // Định dạng hiển thị nhãn Mã Giảm Giá trên bảng
-                            $voucher_display = !empty($o['coupon_code']) 
-                                ? "<span style='background:#fff3cd; color:#856404; padding:3px 6px; border-radius:4px; font-size:12px; font-weight:600;' title='Đã giảm ".number_format($o['total_discount'])."đ'>🎟️ {$o['coupon_code']}</span>" 
-                                : "<span style='color:#aaa; font-size:13px;'>Không dùng</span>";
+                                
+                                // Tính tiền thực thu: Tổng tiền hàng - Giảm giá
+                                $grand_total = max(0, $o['total_price'] - $o['discount_amount']);
+                                
+                                // Màu sắc trạng thái
+                                $status_style = ($o['status'] == 'delivered') ? "background-color: #d4edda;" : 
+                                                (($o['status'] == 'cancelled') ? "background-color: #f8d7da;" : 
+                                                (($o['status'] == 'waiting_confirm') ? "background-color: #fff3cd;" : ""));
                         ?>
-                            <tr>
-                                <td><strong><?= $order_code ?></strong></td>
-                                <td style="font-size: 12px;"><?= date('d/m/Y H:i', strtotime($o['created_at'])) ?></td>
-                                <td><?= htmlspecialchars($o['fullname']) ?></td>
-                                <td><?= $voucher_display ?></td> <td style="color: #e67e22; font-weight:bold;"><?= number_format($grand_total) ?>đ</td>
-                                <td><?= strtoupper($o['payment_method']) ?></td>
-                                <td>
-                                    <select class="status-select" 
-                                            style="<?= $status_style ?> padding: 5px; border-radius: 4px;"
-                                            onchange="updateGroupStatus('<?= $list_ids ?>', this.value, this)">
-                                        <option value="waiting_confirm" <?= $o['status'] == 'waiting_confirm' ? 'selected' : '' ?>>⏳ Chờ duyệt</option>
-                                        <option value="confirmed" <?= $o['status'] == 'confirmed' ? 'selected' : '' ?>>✅ Xác nhận</option>
-                                        <option value="in_transit" <?= $o['status'] == 'in_transit' ? 'selected' : '' ?>>🚚 Đang giao</option>
-                                        <option value="delivered" <?= $o['status'] == 'delivered' ? 'selected' : '' ?>>🏁 Hoàn tất</option>
-                                        <option value="cancelled" <?= $o['status'] == 'cancelled' ? 'selected' : '' ?>>❌ Hủy</option>
-                                    </select>
-                                </td>
-                                <td>
+                                <tr id="order-row-<?= $first_id ?>">
+                                    <td><strong><?= $order_code ?></strong></td>
+                                    <td><?= date('d/m/Y H:i', strtotime($o['created_at'])) ?></td>
+                                    <td><?= htmlspecialchars($o['fullname']) ?></td>
+                                    <td><?= !empty($o['coupon_code']) ? "🎟️ {$o['coupon_code']}" : "-" ?></td>
+                                    <td style="color: #e67e22; font-weight:bold;"><?= number_format($grand_total) ?>đ</td>
+                                    <td><?= strtoupper($o['payment_method']) ?></td>
                                     <td>
-                                        <button onclick="toggleDetails('details-<?= $first_id ?>')" class="btn-edit" title="Xem chi tiết">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
-                                        
-                                        <button onclick="deleteOrder('<?= $first_id ?>')" class="btn-delete" title="Xóa đơn" style="background:#e74c3c; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
+                                        <select class="status-select" style="<?= $status_style ?> padding: 5px; border-radius: 4px;" 
+                                                onchange="updateGroupStatus('<?= $list_ids ?>', this.value, this)">
+                                            <option value="waiting_confirm" <?= $o['status'] == 'waiting_confirm' ? 'selected' : '' ?>>⏳ Chờ duyệt</option>
+                                            <option value="confirmed" <?= $o['status'] == 'confirmed' ? 'selected' : '' ?>>✅ Xác nhận</option>
+                                            <option value="in_transit" <?= $o['status'] == 'in_transit' ? 'selected' : '' ?>>🚚 Đang giao</option>
+                                            <option value="delivered" <?= $o['status'] == 'delivered' ? 'selected' : '' ?>>🏁 Hoàn tất</option>
+                                            <option value="cancelled" <?= $o['status'] == 'cancelled' ? 'selected' : '' ?>>❌ Hủy</option>
+                                        </select>
                                     </td>
-                                </td>
-                            </tr>
-
-                            <tr id="details-<?= $first_id ?>" style="display: none; background: #f9f9f9;">
-                                <td colspan="8"> 
-                                    <div style="padding: 15px; border-left: 4px solid #e67e22; margin: 10px;">
-                                        <h4 style="margin-bottom: 10px;">Sản phẩm trong đơn:</h4>
-                                        <table style="width: 100%; border-collapse: collapse;">
-                                            <?php
-                                            $sql_items = "SELECT p.product_name, o.quantity, o.total_price, o.size 
-                                                        FROM orders o 
-                                                        JOIN products p ON o.product_id = p.id 
-                                                        WHERE o.id IN ($list_ids)";
-                                            $res_items = mysqli_query($conn, $sql_items);
-                                            while ($item = mysqli_fetch_assoc($res_items)) {
-                                            ?>
-                                                <tr style="border-bottom: 1px solid #ddd;">
-                                                    <td style="padding: 8px;">• <?= htmlspecialchars($item['product_name']) ?></td>
-                                                    <td style="padding: 8px;">Size: <strong><?= $item['size'] ?></strong></td>
-                                                    <td style="padding: 8px;">x<?= $item['quantity'] ?></td>
-                                                    <td style="padding: 8px; text-align: right;"><?= number_format($item['total_price']) ?>đ</td>
-                                                </tr>
-                                            <?php } ?>
-                                        </table>
-                                        
-                                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ddd; text-align: right; font-size: 14px;">
-                                            <div>Tiền hàng: <strong><?= number_format($o['total_goods_price']) ?>đ</strong></div>
-                                            <div style="color: #c0392b;">Voucher giảm: <strong>-<?= number_format($o['total_discount']) ?>đ</strong></div>
-                                            <div style="font-size: 16px; color: #e67e22; margin-top: 5px;">Thực thu: <strong><?= number_format($grand_total) ?>đ</strong></div>
+                                    <td>
+                                        <button onclick="toggleDetails('details-<?= $first_id ?>')" class="btn-edit"><i class="fa-solid fa-eye"></i></button>
+                                        <button onclick="deleteOrder('<?= $list_ids ?>')" class="btn-delete" style="background:#e74c3c; color:white; border:none; padding:5px 8px;"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr id="details-<?= $first_id ?>" style="display: none; background: #f9f9f9;">
+                                    <td colspan="8">
+                                        <div style="padding: 15px; border-left: 4px solid #e67e22;">
+                                            <h4>Sản phẩm trong đơn:</h4>
+                                            <table style="width: 100%;">
+                                                <?php
+                                                $sql_items = "SELECT p.product_name, o.quantity, o.total_price, o.size 
+                                                            FROM orders o 
+                                                            JOIN products p ON o.product_id = p.id 
+                                                            WHERE o.id IN ($list_ids)";
+                                                $res_items = mysqli_query($conn, $sql_items);
+                                                while ($item = mysqli_fetch_assoc($res_items)) {
+                                                    echo "<tr><td>• {$item['product_name']}</td><td>Size: {$item['size']}</td><td>x{$item['quantity']}</td><td style='text-align:right;'>".number_format($item['total_price'])."đ</td></tr>";
+                                                }
+                                                ?>
+                                            </table>
+                                            <hr>
+                                            <div style="text-align:right;">
+                                                <p>Tiền hàng: <strong><?= number_format($o['total_price']) ?>đ</strong></p>
+                                                <p style="color:red;">Voucher: <strong>-<?= number_format($o['discount_amount']) ?>đ</strong></p>
+                                                <p style="font-size:16px;">Thực thu: <strong><?= number_format($grand_total) ?>đ</strong></p>
+                                            </div>
                                         </div>
-                                        
-                                        <div style="margin-top: 10px; font-size: 13px; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #eee;">
-                                            <strong>Địa chỉ giao hàng:</strong> <?= htmlspecialchars($o['address']) ?> | <strong>SĐT:</strong> <?= $o['phone'] ?>
-                                        </div>
-
-                                        <div style="text-align: right; margin-top: 12px;">
-                                            <button class="btn-print-invoice" 
-                                                    onclick="printInvoice('<?= $list_ids ?>')" 
-                                                    style="background: #2c3e50; color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;">
-                                                <i class="fa-solid fa-file-invoice"></i> Xuất hóa đơn
-                                            </button>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php } ?>
+                                    </td>
+                                </tr>
+                        <?php 
+                            }
+                        } else {
+                            echo "<tr><td colspan='8' style='text-align:center;'>Chưa có đơn hàng nào.</td></tr>";
+                        }
+                        ?>
                     </tbody>
                 </table>
             </section>
 
             <section id="coupons" class="tab-content">
                 <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
-                    <h3>Quản Lý Mã Giảm Giá (Coupons)</h3>
+                    <h3>Quản Lý Mã Giảm Giá</h3>
                     <div style="display: flex; gap: 10px; flex: 1; justify-content: flex-end;">
-                        <input type="text" id="searchCoupon" class="status-select" placeholder="🔍 Tìm mã voucher..." onkeyup="filterTable('coupons', 'searchCoupon')">
+                        <input type="text" id="searchCoupon" class="status-select" placeholder="🔍 Tìm mã..." onkeyup="filterTable('coupons', 'searchCoupon')">
                         <button class="btn-main" onclick="openCouponModal()"><i class="fa-solid fa-plus"></i> Thêm Mã</button>
                     </div>
                 </div>
-                <table>
+                <table id="coupons-table">
                     <thead>
-                        <!-- hh -->
                         <tr>
                             <th>ID</th>
                             <th>Mã Voucher</th>
-                            <th>Mức Giảm</th>
+                            <th>Giảm</th>
                             <th>Đơn Tối Thiểu</th>
-                            <th>Ngày Hết Hạn</th>
-                            <th>Số lượng (Đã dùng/Tổng)</th> <th>Trạng Thái</th>
+                            <th>Hết Hạn</th>
+                            <th>Đã dùng / Tổng</th>
+                            <th>Trạng Thái</th>
                             <th>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php
-                        // Query lấy danh sách đơn hàng đã gộp
-                        $sql_grouped = "SELECT u.fullname, o.phone, o.address, o.status, o.payment_method, 
-                                                o.created_at, o.coupon_code,
-                                                SUM(o.total_price) as total_goods_price, 
-                                                MAX(o.discount_amount) as total_discount,
-                                                GROUP_CONCAT(o.id) as list_ids 
-                                        FROM orders o 
-                                        JOIN users u ON o.user_id = u.id 
-                                        WHERE o.status != 'pending' 
-                                        GROUP BY o.user_id, o.created_at, o.status, o.payment_method, o.coupon_code
-                                        ORDER BY o.created_at DESC";
-                        
-                        $orderRes = mysqli_query($conn, $sql_grouped);
+                        // Tui dùng đúng tên cột theo logic coupon cũ của ní
+                        $sql_coupons = "SELECT * FROM coupons ORDER BY id DESC";
+                        $res_coupons = mysqli_query($conn, $sql_coupons);
 
-                        while ($o = mysqli_fetch_assoc($orderRes)) {
-                            $list_ids = $o['list_ids'];
-                            $first_id = explode(',', $list_ids)[0]; // Dùng ID đầu tiên đại diện cho nhóm
-                            $order_code = "DH-" . date("dmy-Hi", strtotime($o['created_at'])) . "-" . $first_id;
-                            
-                            $grand_total = $o['total_goods_price'] - $o['total_discount'];
-                            if ($grand_total < 0) $grand_total = 0;
-
-                            $status_style = "";
-                            if ($o['status'] == 'delivered') $status_style = "background-color: #d4edda;";
-                            else if ($o['status'] == 'cancelled') $status_style = "background-color: #f8d7da;";
-                            else if ($o['status'] == 'waiting_confirm') $status_style = "background-color: #fff3cd;";
-
-                            $voucher_display = !empty($o['coupon_code']) 
-                                ? "<span style='background:#fff3cd; color:#856404; padding:3px 6px; border-radius:4px; font-size:12px;'>🎟️ {$o['coupon_code']}</span>" 
-                                : "<span style='color:#aaa; font-size:13px;'>Không</span>";
+                        if ($res_coupons && mysqli_num_rows($res_coupons) > 0) {
+                            while ($cp = mysqli_fetch_assoc($res_coupons)) {
+                                // Lấy giá trị an toàn, nếu database để trống thì mặc định là 0
+                                $used = isset($cp['used_count']) ? $cp['used_count'] : 0;
+                                $limit = isset($cp['usage_limit']) ? $cp['usage_limit'] : 0;
+                                
+                                // Kiểm tra hết hạn: nếu ngày hết hạn < ngày hiện tại -> Hết hạn
+                                $is_expired = (strtotime($cp['expiry_date']) < time());
+                                
+                                $status_text = ($is_expired) 
+                                    ? "<span style='padding:4px 8px; background:#f8d7da; color:#721c24; border-radius:4px; font-size:12px;'>Hết hạn</span>"
+                                    : "<span style='padding:4px 8px; background:#d4edda; color:#155724; border-radius:4px; font-size:12px;'>Hoạt động</span>";
                         ?>
-                            <tr id="order-row-<?= $first_id ?>">
-                                <td><strong><?= $order_code ?></strong></td>
-                                <td><?= date('d/m/Y H:i', strtotime($o['created_at'])) ?></td>
-                                <td><?= htmlspecialchars($o['fullname']) ?></td>
-                                <td><?= $voucher_display ?></td>
-                                <td style="color: #e67e22; font-weight:bold;"><?= number_format($grand_total) ?>đ</td>
-                                <td><?= strtoupper($o['payment_method']) ?></td>
+                            <tr id="coupon-row-<?= $cp['id'] ?>">
+                                <td><?= $cp['id'] ?></td>
+                                <td><strong><?= htmlspecialchars($cp['code']) ?></strong></td>
+                                <td><?= number_format($cp['discount_value']) ?>đ</td>
+                                <td><?= number_format($cp['min_order']) ?>đ</td>
+                                <td><?= date('d/m/Y', strtotime($cp['expiry_date'])) ?></td>
+                                <td><?= $used ?> / <?= $limit ?></td>
+                                <td><?= $status_text ?></td>
                                 <td>
-                                    <select class="status-select" style="<?= $status_style ?> padding: 5px; border-radius: 4px;" 
-                                            onchange="updateGroupStatus('<?= $list_ids ?>', this.value, this)">
-                                        <option value="waiting_confirm" <?= $o['status'] == 'waiting_confirm' ? 'selected' : '' ?>>⏳ Chờ duyệt</option>
-                                        <option value="confirmed" <?= $o['status'] == 'confirmed' ? 'selected' : '' ?>>✅ Xác nhận</option>
-                                        <option value="in_transit" <?= $o['status'] == 'in_transit' ? 'selected' : '' ?>>🚚 Đang giao</option>
-                                        <option value="delivered" <?= $o['status'] == 'delivered' ? 'selected' : '' ?>>🏁 Hoàn tất</option>
-                                        <option value="cancelled" <?= $o['status'] == 'cancelled' ? 'selected' : '' ?>>❌ Hủy</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <button onclick="toggleDetails('details-<?= $first_id ?>')" class="btn-edit" title="Xem chi tiết">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </button>
-                                    <button onclick="deleteOrder('<?= $first_id ?>')" class="btn-delete" style="background:#e74c3c; color:white; border:none; padding:5px 10px; cursor:pointer;">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
+                                    <button onclick="editCoupon(<?= $cp['id'] ?>)" class="btn-edit" title="Sửa"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteCoupon(<?= $cp['id'] ?>)" class="btn-delete" style="background:#e74c3c; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" title="Xóa"><i class="fa-solid fa-trash"></i></button>
                                 </td>
                             </tr>
-
-                            <tr id="details-<?= $first_id ?>" style="display: none; background: #f9f9f9;">
-                                <td colspan="8"> 
-                                    <div style="padding: 15px; border-left: 4px solid #e67e22;">
-                                        <p>Sản phẩm trong đơn: ...</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php } ?>
+                        <?php 
+                            }
+                        } else {
+                            echo "<tr><td colspan='8' style='text-align:center; padding:20px;'>Chưa có mã giảm giá nào.</td></tr>";
+                        }
+                        ?>
+                        
                     </tbody>
                 </table>
             </section>

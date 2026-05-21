@@ -801,10 +801,67 @@ function printInvoice(orderIds) {
         };
         
 // HẾT CODE ADMIN.JS
-setInterval(() => {
-    console.log("Đang kiểm tra dữ liệu mới...");
-    // Cách 1: Nếu bảng đơn hàng của ní đơn giản, có thể fetch lại nội dung trang admin
-    // Cách 2: Tối ưu hơn là dùng một file PHP riêng để đếm số lượng đơn hàng
-    // Ví dụ đơn giản nhất là refresh nhẹ phần thân bảng nếu cần:
-    // fetch('admin.php').then(res => res.text()).then(html => { ... update bảng ... });
-}, 3000);
+// Hàm thêm dòng đơn hàng mới vào bảng nếu chưa tồn tại
+window.addNewOrderToTable = function(orderData) {
+    const tableBody = document.querySelector('#orders tbody');
+    const firstId = orderData.list_ids.split(',')[0];
+    
+    // Kiểm tra nếu đã có hàng này rồi thì không thêm lại
+    if (document.getElementById('order-row-' + firstId)) return;
+
+    const newRow = document.createElement('tr');
+    newRow.id = 'order-row-' + firstId;
+    newRow.innerHTML = `
+        <td><strong>MỚI: ${firstId}</strong></td>
+        <td>Vừa đặt...</td>
+        <td colspan="6" style="color: #e67e22;">Vui lòng F5 để cập nhật chi tiết hoặc thiết kế hàm render chi tiết tại đây.</td>
+    `;
+    tableBody.prepend(newRow); // Thêm vào đầu bảng
+};
+
+// Hàm kiểm tra đơn hàng mới mỗi 10 giây
+let currentOrderCount = -1; // Khởi tạo giá trị ban đầu là -1
+
+setInterval(function() {
+    fetch('php/get_new_orders.php')
+        .then(response => response.json())
+        .then(data => {
+            // Nếu đây là lần đầu tiên chạy, chỉ lưu lại số lượng hiện có rồi thoát
+            if (currentOrderCount === -1) {
+                currentOrderCount = data.count;
+                return;
+            }
+
+            // Nếu số đơn mới > số đơn cũ, tức là có đơn hàng vừa vào
+            if (data.count > currentOrderCount) {
+                currentOrderCount = data.count; // Cập nhật mốc mới để không bị lặp lại
+                
+                // 1. Chỉ hiện thông báo 1 lần
+                showToast("🔔 Bạn có đơn hàng mới! Đang cập nhật danh sách...");
+
+                // 2. Thay vì reload trang, hãy gọi hàm làm mới bảng
+                // Cách đơn giản nhất: load lại phần tbody của bảng
+                refreshOrderTable(); 
+            }
+        })
+        .catch(err => console.error("Lỗi fetch:", err));
+}, 5000); // 5 giây kiểm tra 1 lần
+
+// Hàm này giúp làm mới bảng mà không làm mất trạng thái của web
+function refreshOrderTable() {
+    fetch('admin.php') // Gọi chính file admin.php
+        .then(response => response.text())
+        .then(html => {
+            // Trích xuất phần tbody mới từ nội dung trang admin
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTbody = doc.querySelector('#orders-table tbody');
+            
+            // Thay thế nội dung tbody cũ bằng tbody mới
+            document.querySelector('#orders-table tbody').innerHTML = newTbody.innerHTML;
+            
+            // Cập nhật số lượng trên menu
+            let counter = document.querySelector('.nav-counter');
+            if (counter) counter.innerText = currentOrderCount;
+        });
+}

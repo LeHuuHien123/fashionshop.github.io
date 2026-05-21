@@ -27,9 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // 4. Lưu đơn hàng vào bảng orders
+    // Dòng 35-36 trong file create_order.php của ní:
+    // Sửa dòng 35-36 thành:
+    // Sửa dòng INSERT: Bỏ hẳn chữ 'waiting_confirm' ra
     $sql_order = "INSERT INTO orders (user_id, product_id, quantity, total_price, phone, address, note, status) 
-                  VALUES ('$user_id', '$product_id', '$quantity', '$total_price', '$phone', '$address', '$note', 'pending')";
-
+                VALUES ('$user_id', '$product_id', '$quantity', '$total_price', '$phone', '$address', '$note', NULL)"; 
+// NULL ở đây sẽ làm status trong DB trắng bóc
     if (mysqli_query($conn, $sql_order)) {
         
         // 5. Nếu lưu đơn thành công -> Trừ đi số lượng đã mua trong bảng products
