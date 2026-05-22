@@ -799,7 +799,42 @@ function printInvoice(orderIds) {
                 row.style.display = '';
             });
         };
+function playTingTing() {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = 'sine'; // Kiểu âm thanh trong trẻo
+    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Tần số cao (tiếng ting)
+    oscillator.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.3);
+}     
+function filterOrdersByStatus(status, btnElement) {
+    // 1. Logic đổi màu nút
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+
+    // 2. Logic lọc bảng
+    const rows = document.querySelectorAll('#orders-table tbody tr');
+    rows.forEach(row => {
+        if (row.id.includes('details')) return; 
         
+        const select = row.querySelector('select');
+        if (status === 'all' || (select && select.value === status)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}  
 // HẾT CODE ADMIN.JS
 // Hàm thêm dòng đơn hàng mới vào bảng nếu chưa tồn tại
 window.addNewOrderToTable = function(orderData) {
@@ -835,7 +870,7 @@ setInterval(function() {
             // Nếu số đơn mới > số đơn cũ, tức là có đơn hàng vừa vào
             if (data.count > currentOrderCount) {
                 currentOrderCount = data.count; // Cập nhật mốc mới để không bị lặp lại
-                
+                playTingTing(); // Phát âm thanh cảnh báo
                 // 1. Chỉ hiện thông báo 1 lần
                 showToast("🔔 Bạn có đơn hàng mới! Đang cập nhật danh sách...");
 

@@ -17,6 +17,38 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+.tab-filter-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 5px;
+    background: #f4f4f4;
+    border-radius: 10px;
+    width: fit-content;
+}
+
+.tab-btn {
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: #555;
+}
+
+.tab-btn:hover {
+    background: #e0e0e0;
+}
+
+.tab-btn.active {
+    background: #e67e22; /* Màu cam chủ đạo của web ní */
+    color: white;
+    box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3);
+}
+</style>
 </head>
 <body>
     <div class="admin-container">
@@ -263,6 +295,11 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['ro
                 </div>
                 <table id="orders-table">
                     <thead>
+                        <div class="tab-filter-container">
+                            <button class="tab-btn active" onclick="filterOrdersByStatus('all', this)">Tất cả</button>
+                            <button class="tab-btn" onclick="filterOrdersByStatus('waiting_confirm', this)">Chờ duyệt</button>
+                            <button class="tab-btn" onclick="filterOrdersByStatus('delivered', this)">Đã xong</button>
+                        </div>
                         <tr>
                             <th>Mã Đơn</th>
                             <th>Ngày Đặt</th>
