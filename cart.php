@@ -116,22 +116,33 @@ if ($res_user && mysqli_num_rows($res_user) > 0) {
     .cart-table tr td:last-child { border-radius: 0 12px 12px 0; }
 
     /* --- NÚT TĂNG GIẢM SỐ LƯỢNG --- */
-    .qty-btn {
-        width: 30px;
-        height: 30px;
-        border: 1px solid #d7ccc8;
-        border-radius: 4px; /* Chuyển sang bo nhẹ thay vì tròn xoe */
-        background: #fff;
-        color: #5d4037;
-        cursor: pointer;
-        font-weight: bold;
-        transition: 0.3s;
-    }
-    .qty-btn:hover {
-        background: #8d6e63;
-        color: #fff;
-        border-color: #8d6e63;
-    }
+    /* Style cho ô chọn Size */
+.cart-size-wrapper select:hover {
+    border-color: #e67e22; /* Màu cam cam của Huno Shop */
+    background-color: #fff;
+}
+
+.cart-size-wrapper select:focus {
+    border-color: #e67e22;
+    box-shadow: 0 0 0 0.2rem rgba(230, 126, 34, 0.25);
+}
+
+/* Style cho nút +/- cho đồng bộ */
+.qty-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.qty-btn:hover {
+    background: #e67e22;
+    color: white;
+    border-color: #e67e22;
+}
 
     /* --- BADGE TRẠNG THÁI --- */
     .status-badge { 
@@ -375,7 +386,19 @@ if ($res_user && mysqli_num_rows($res_user) > 0) {
     font-weight: bold;
     animation: slideIn 0.5s ease-out, fadeOut 0.5s ease-in 1.5s forwards;
 }
-
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    background: #e67e22; /* Màu cam cam cho giống theme Huno Shop */
+    color: #fff;
+    border-radius: 8px;
+    z-index: 9999;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    animation: fadeIn 0.5s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -484,29 +507,28 @@ if ($res_user && mysqli_num_rows($res_user) > 0) {
                             <button class="qty-btn" onclick="updateQty(<?= $row['id'] ?>, 1)">+</button>
                         </td>
                         <td>
-                            <div class="cart-item-info" style="display: flex; align-items: center; gap: 15px;">            
-                                    <div style="margin-top: 5px; display: flex; align-items: center; gap: 5px;">
-                                        <span style="font-size: 12px; color: #666;">Size:</span>
-                                        <select onchange="updateCartSize(<?= $row['id'] ?>, this.value)" style="padding: 2px 5px; border-radius: 4px; border: 1px solid #ddd; font-size: 12px; cursor: pointer;">
-                                            <?php 
-                                            // Lấy danh sách size khả dụng của sản phẩm này
-                                            $p_id = $row['product_id'];
-                                            $sql_size = "SELECT size FROM products WHERE id = $p_id";
-                                            $res_size = mysqli_query($conn, $sql_size);
-                                            $p_data = mysqli_fetch_assoc($res_size);
-                                            
-                                            if ($p_data && !empty($p_data['size'])) {
-                                                $available = explode(',', $p_data['size']);
-                                                foreach ($available as $sz) {
-                                                    $sz_name = explode(':', trim($sz))[0];
-                                                    $selected = ($sz_name == $row['size']) ? 'selected' : '';
-                                                    echo "<option value='$sz_name' $selected>$sz_name</option>";
-                                                }
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
+                            <div class="cart-size-wrapper" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span style="font-size: 13px; color: #555; font-weight: 500;">Size:</span>
+                                <select onchange="updateCartSize(<?= $row['id'] ?>, this.value)" 
+                                        style="padding: 5px 10px; border-radius: 6px; border: 1px solid #ced4da; 
+                                            background-color: #f8f9fa; font-size: 13px; cursor: pointer; 
+                                            transition: all 0.3s ease; outline: none;">
+                                    <?php 
+                                    $p_id = $row['product_id'];
+                                    $sql_size = "SELECT size FROM products WHERE id = $p_id";
+                                    $res_size = mysqli_query($conn, $sql_size);
+                                    $p_data = mysqli_fetch_assoc($res_size);
+                                    
+                                    if ($p_data && !empty($p_data['size'])) {
+                                        $available = explode(',', $p_data['size']);
+                                        foreach ($available as $sz) {
+                                            $sz_name = explode(':', trim($sz))[0];
+                                            $selected = ($sz_name == $row['size']) ? 'selected' : '';
+                                            echo "<option value='$sz_name' $selected>$sz_name</option>";
+                                        }
+                                    }
+                                    ?>
+                                </select>
                             </div>
                         </td>
                         <td><strong style="color: #e67e22;"><?= number_format($row['total_price']) ?>đ</strong></td>
@@ -724,7 +746,22 @@ if ($res_user && mysqli_num_rows($res_user) > 0) {
         </form>
     </div>
 </div>
+<div id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+    <div style="background:#fff; width:300px; padding:20px; border-radius:15px; text-align:center; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
+        <h3 id="modalMsg">Bạn có chắc chắn?</h3>
+        <button id="btnConfirm" style="background:#e67e22; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Đồng ý</button>
+        <button onclick="document.getElementById('confirmModal').style.display='none'" style="background:#ccc; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; margin-left:10px;">Hủy</button>
+    </div>
+</div>
 <script>
+function showToast(message) {
+    let toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerText = message;
+    toast.style.cssText = "position:fixed; bottom:20px; right:20px; padding:15px 25px; background:#e67e22; color:#fff; border-radius:8px; z-index:9999; box-shadow:0 4px 10px rgba(0,0,0,0.2); animation: fadeIn 0.5s;";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+}
 // Biến toàn cục để lưu số tiền gốc của các sản phẩm được chọn thanh toán
 let originalTotalCart = 0; 
 
@@ -962,112 +999,137 @@ window.updateCartSize = function(orderId, newSize) {
     })
     .catch(error => console.error("Lỗi kết nối:", error));
 };
+// =======================================================
+// BỘ HÀM XÓA CẢI TIẾN (DÙNG MODAL XÁC NHẬN)
+// =======================================================
+function openConfirmModal(message, actionCallback) {
+    document.getElementById('modalMsg').innerText = message;
+    const btn = document.getElementById('btnConfirm');
+    const modal = document.getElementById('confirmModal');
+    
+    modal.style.display = 'flex'; // Hiện Modal
+    
+    // Gán sự kiện cho nút Đồng ý
+    btn.onclick = () => {
+        modal.style.display = 'none';
+        actionCallback(); // Chạy hàm xóa thật sự
+    };
+}
+function confirmAction() {
+    if (!itemToDelete) return;
+    
+    // Đóng Modal lại
+    document.getElementById('confirmModal').style.display = 'none';
+    
+    // Thực hiện fetch xóa như cũ
+    const fd = new FormData();
+    fd.append('ids', itemToDelete);
+    fd.append('action', 'delete_selected');
 
-// 13. Hàm xóa các mục giỏ hàng đã được tick chọn bằng Checkbox
+    fetch('php/remove_cart.php', { method: 'POST', body: fd })
+    .then(res => res.text())
+    .then(data => {
+        if (data.trim() === 'success') {
+            showToast("✅ Đã xóa sản phẩm!");
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert("Lỗi: " + data);
+        }
+    });
+}
+// 13. Hàm xóa các mục đã chọn
 function removeSelectedItems() {
     const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
     if (selectedCheckboxes.length === 0) {
-        alert("Vui lòng chọn ít nhất một sản phẩm để xóa!");
+        alert("Vui lòng chọn ít nhất một sản phẩm!");
         return;
     }
 
-    if (!confirm("Bạn có chắc chắn muốn xóa các mục đã chọn khỏi giỏ hàng?")) return;
+    openConfirmModal("Bạn có chắc chắn muốn xóa các mục đã chọn?", () => {
+        const ids = Array.from(selectedCheckboxes).map(cb => cb.closest('.cart-row').dataset.id).join(',');
+        const fd = new FormData();
+        fd.append('ids', ids);
+        fd.append('action', 'delete_selected');
 
-    const ids = Array.from(selectedCheckboxes).map(cb => cb.closest('.cart-row').dataset.id).join(',');
-
-    const fd = new FormData();
-    fd.append('ids', ids);
-    fd.append('action', 'delete_selected');
-
-    fetch('php/manage_cart.php', {
-        method: 'POST',
-        body: fd
-    })
-    .then(res => res.text())
-    .then(data => {
-        if (data.trim() === 'success') {
-            location.reload();
-        } else {
-            alert("Lỗi: " + data);
-        }
+        fetch('php/manage_cart.php', { method: 'POST', body: fd })
+        .then(res => res.text())
+        .then(data => {
+            if (data.trim() === 'success') {
+                showToast("🗑️ Đã xóa thành công!");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert("Lỗi: " + data);
+            }
+        });
     });
 }
 
-// 14. Hàm Xóa toàn bộ giỏ hàng của người dùng hiện tại
+// 14. Hàm xóa tất cả giỏ hàng
 function removeAllCart() {
-    if (!confirm("Cảnh báo: Bạn có chắc chắn muốn XÓA TẤT CẢ sản phẩm trong giỏ hàng không?")) return;
+    openConfirmModal("Bạn có chắc chắn muốn XÓA TẤT CẢ sản phẩm trong giỏ hàng?", () => {
+        const fd = new FormData();
+        fd.append('action', 'delete_all');
 
-    const fd = new FormData();
-    fd.append('action', 'delete_all');
-
-    fetch('php/manage_cart.php', {
-        method: 'POST',
-        body: fd
-    })
-    .then(res => res.text())
-    .then(data => {
-        if (data.trim() === 'success') {
-            location.reload();
-        } else {
-            alert("Lỗi: " + data);
-        }
+        fetch('php/manage_cart.php', { method: 'POST', body: fd })
+        .then(res => res.text())
+        .then(data => {
+            if (data.trim() === 'success') {
+                showToast("✨ Giỏ hàng đã được dọn sạch!");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert("Lỗi: " + data);
+            }
+        });
     });
 }
 
-// 15. Hàm xóa 1 hàng sản phẩm duy nhất thông qua biểu tượng Thùng rác nhỏ
+// 15. Hàm xóa 1 hàng sản phẩm (Dùng chung Modal)
 function removeCartItem(id) {
-    if (!confirm("Xóa sản phẩm này khỏi giỏ hàng?")) return;
+    // Lưu ID vào biến toàn cục trước
+    window.itemToDelete = id; 
+    
+    // Gọi Modal xác nhận
+    openConfirmModal("Xóa sản phẩm này khỏi giỏ hàng?", () => {
+        const fd = new FormData();
+        fd.append('ids', window.itemToDelete);
+        fd.append('action', 'delete_selected');
 
-    const fd = new FormData();
-    fd.append('ids', id);
-    fd.append('action', 'delete_selected');
-
-    fetch('php/manage_cart.php', {
-        method: 'POST',
-        body: fd
-    })
-    .then(res => res.text())
-    .then(data => {
-        if (data.trim() === 'success') {
-            location.reload();
-        } else {
-            alert("Lỗi: " + data);
-        }
+        fetch('php/manage_cart.php', { method: 'POST', body: fd })
+        .then(res => res.text())
+        .then(data => {
+            if (data.trim() === 'success') {
+                showToast("✅ Đã xóa sản phẩm!");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert("Lỗi: " + data);
+            }
+        });
     });
 }
 
-// 16. Hàm xử lý gửi yêu cầu hủy đơn hàng trong lịch sử (Khi trạng thái là Chờ xử lý/Đã xác nhận)
+// 16. Hủy đơn hàng (Trong lịch sử - Cũng đổi sang dùng Modal)
 function handleCancelOrder(listIds, buttonElement) {
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
+    openConfirmModal("Bạn có chắc chắn muốn hủy đơn hàng này không?", () => {
+        const originalContent = buttonElement.innerHTML;
+        buttonElement.innerHTML = "⏳ Đang xử lý...";
+        buttonElement.disabled = true;
 
-    const originalContent = buttonElement.innerHTML;
-    buttonElement.innerHTML = "⏳ Đang xử lý...";
-    buttonElement.disabled = true;
-
-    fetch('php/update_order_status.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `ids=${listIds}&status=cancelled`
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Không tìm thấy file xử lý (404)!');
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert('✅ Đã hủy đơn hàng thành công!');
-            location.reload(); 
-        } else {
-            alert('Lỗi: ' + data.message);
-            buttonElement.innerHTML = originalContent;
-            buttonElement.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra: ' + error.message);
-        buttonElement.innerHTML = originalContent;
-        buttonElement.disabled = false;
+        fetch('php/update_order_status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `ids=${listIds}&status=cancelled`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast("✅ Đã hủy đơn hàng!");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert('Lỗi: ' + data.message);
+                buttonElement.innerHTML = originalContent;
+                buttonElement.disabled = false;
+            }
+        });
     });
 }
 </script>
