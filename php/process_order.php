@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SESSION['user_id'])) {
 
     // ĐÃ ĐỔI: Chuyển 'waiting_confirm' thành 'Chờ xử lý' để đồng bộ với bộ lọc của Staff/Admin
     $sql = "UPDATE orders SET 
-            status = 'Chờ xử lý', 
+            status = 'waiting_confirm', 
             phone = ?, 
             address = ?, 
             note = ?, 

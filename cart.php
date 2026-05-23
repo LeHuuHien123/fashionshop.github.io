@@ -397,6 +397,23 @@ if ($res_user && mysqli_num_rows($res_user) > 0) {
     z-index: 9999;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     animation: fadeIn 0.5s;
+}/* Spinner quay tròn */
+.spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Class chặn click khi đang loading */
+.btn-loading {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: wait !important;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideIn {
@@ -924,6 +941,12 @@ document.getElementById('finalCheckoutForm').onsubmit = function(e) {
         return;
     }
 
+    // 1. Tối ưu UI: Bật trạng thái Loading
+    const btnSubmit = this.querySelector('button[type="submit"]');
+    const originalText = btnSubmit.innerText;
+    btnSubmit.classList.add('btn-loading');
+    btnSubmit.innerHTML = `<span class="spinner"></span> Đang đặt hàng...`;
+
     const orderIds = Array.from(selectedCheckboxes).map(cb => cb.closest('.cart-row').dataset.id).join(',');
     
     const fd = new FormData(this);
@@ -935,16 +958,24 @@ document.getElementById('finalCheckoutForm').onsubmit = function(e) {
     })
     .then(res => res.text())
     .then(data => {
-        if (data.includes('success')) {
+        // Tắt loading
+        btnSubmit.classList.remove('btn-loading');
+        btnSubmit.innerText = originalText;
+
+        if (data.trim() === 'success') {
             showToast("Đặt hàng thành công!");
+            setTimeout(() => location.reload(), 1500); // Reload sau 1.5s để khách thấy thông báo
         } else {
-            console.error("Lỗi:", data);
+            console.error("Lỗi server trả về:", data);
             alert("Có lỗi xảy ra: " + data);
         }
     })
-    .catch(err => console.error("Lỗi kết nối:", err));
+    .catch(err => {
+        btnSubmit.classList.remove('btn-loading');
+        btnSubmit.innerText = originalText;
+        console.error("Lỗi kết nối:", err);
+    });
 };
-
 // 11. Hàm cập nhật số lượng (+ / -) của sản phẩm trong giỏ hàng
 function updateQty(orderId, change) {
     const qtyElement = document.getElementById('qty-' + orderId);
